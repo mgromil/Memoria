@@ -495,7 +495,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       <h3 style="margin:6px 0 0">2. Va dans ton IA</h3>
       <p class="small" style="margin:0">Ouvre Claude ou ChatGPT (gratuits), colle la consigne et ajoute la photo ou la capture de ton emploi du temps. Envoie.</p>
       <h3 style="margin:6px 0 0">3. Colle sa réponse ici</h3>
-      <textarea id="impText" rows="8" placeholder="UE21 Appareil locomoteur ; Sémiologie ; Sémiologie de la marche ; 27/10/2026"></textarea>
+      <textarea id="impText" rows="8" placeholder="UE1 ; Maths ; Les fractions ; 15/09/2026"></textarea>
       <div class="row"><button class="btn primary" id="impCheck" type="button">Voir ce qui va être ajouté</button></div>
       <span class="small" id="impMsg" role="status"></span>
     </div>
@@ -1453,8 +1453,9 @@ Règles :
 - N'invente rien : recopie seulement ce qui est écrit.
 
 Exemple :
-UE21 Appareil locomoteur ; Sémiologie ; Sémiologie de la marche ; 27/10/2026
-UE22 Agents infectieux ; Virologie ; VIH ; 02/11/2026
+UE1 ; Maths ; Les fractions ; 15/09/2026
+UE1 ; Physique ; L'électricité ; 17/09/2026
+UE2 ; Histoire ; La Révolution française ; 18/09/2026
 ; Anglais`;
   $("impPrompt").value = IMP_PROMPT;
   $("impCopy").onclick = async () => {
