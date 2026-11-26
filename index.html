@@ -300,7 +300,6 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       <button class="item" id="tab-settings">Réglages</button>
       <button class="item" id="tab-account">Mon compte</button>
       <button class="item" id="tab-intro">Présentation</button>
-      <div class="menu-colors"><span>Couleur</span><div class="swatches" id="accentPicker" aria-label="Couleur du site"></div></div>
     </nav>
   </header>
 
@@ -351,7 +350,6 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
         <datalist id="ueList"></datalist>
         <button class="btn primary" type="submit">Ajouter</button>
       </form>
-      <div class="row small muted">Couleur : <div class="colors" id="subjectColors"></div></div>
       <div class="row small"><span class="muted">Beaucoup de matières ?</span><button class="btn ghost small" id="subjectsImport" type="button">Importer depuis une photo de ton emploi du temps</button></div>
     </div>
     <div class="grid-sub" id="subjectGrid"></div>
@@ -363,10 +361,12 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     <div class="card">
       <div class="muted small" id="subjectUe"></div>
       <h2 id="subjectTitle"></h2>
+      <div class="row small"><span class="muted">Couleur de la matière :</span><div class="colors" id="subjectColorPick" aria-label="Couleur de la matière"></div></div>
       <form class="row" id="editUeForm">
         <label for="editUe" class="small muted">UE de cette matière :</label>
         <input type="text" id="editUe" list="ueList" placeholder="Aucune" maxlength="40">
         <button class="btn small" type="submit">Changer</button>
+        <span class="saved" id="ueSaved" hidden></span>
       </form>
       <form class="row" id="addChapterForm">
         <input type="text" id="newChapter" placeholder="Nouveau chapitre ou notion" maxlength="80" required>
@@ -396,6 +396,11 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
 
   <!-- RÉGLAGES -->
   <section id="view-settings" class="wrap" style="gap:16px" hidden>
+    <div class="card">
+      <h2>Couleur du site</h2>
+      <p class="small muted" style="margin:0">Choisis la couleur principale de Mémoria.</p>
+      <div class="swatches" id="accentPicker" aria-label="Couleur du site"></div>
+    </div>
     <div class="card">
       <h2>Mes J</h2>
       <p class="small muted" style="margin:0">Choisis à quels jours tu révises un chapitre après l'avoir vu en cours. Ça s'applique aux chapitres que tu ajoutes ensuite.</p>
@@ -648,13 +653,12 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     $("accentPicker").appendChild(b);
   });
 
-  let newSubColor = SUB_COLORS[0];
+  // couleur d'une matière : choisie automatiquement, modifiable sur la page de la matière
   SUB_COLORS.forEach(c => {
     const b = document.createElement("button");
-    b.type = "button"; b.className = "swatch"; b.style.background = c; b.setAttribute("aria-label", "Couleur de matière");
-    b.onclick = () => { newSubColor = c; $("subjectColors").querySelectorAll(".swatch").forEach(x => x.setAttribute("aria-pressed", x === b)); };
-    b.setAttribute("aria-pressed", c === newSubColor);
-    $("subjectColors").appendChild(b);
+    b.type = "button"; b.className = "swatch"; b.style.background = c; b.dataset.color = c; b.setAttribute("aria-label", "Couleur de la matière");
+    b.onclick = () => { const s = state.subjects.find(x => x.id === current.subjectId); if (!s) return; s.color = c; save(); render(); };
+    $("subjectColorPick").appendChild(b);
   });
 
   // ---------- Navigation ----------
@@ -930,6 +934,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     if (!s) return show("subjects");
     $("subjectTitle").textContent = s.name;
     $("subjectUe").textContent = s.ue ? s.ue : "Sans UE";
+    $("subjectColorPick").querySelectorAll(".swatch").forEach(b => b.setAttribute("aria-pressed", b.dataset.color === s.color));
     if (document.activeElement !== $("editUe")) $("editUe").value = s.ue || "";
     if (document.activeElement !== $("newChapter")) $("chapterAlert").hidden = true;
     $("newChapterDate").max = TODAY; if (!$("newChapterDate").value) $("newChapterDate").value = TODAY;
@@ -1335,13 +1340,16 @@ ${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""
     const name = $("newSubject").value.trim(); if (!name) return;
     const ue = $("newUe").value.trim();
     if (state.subjects.some(s => s.name.toLowerCase() === name.toLowerCase() && (s.ue || "") === ue)) { $("newSubject").setCustomValidity(ue ? "Cette matière existe déjà dans cette UE" : "Cette matière existe déjà"); $("newSubject").reportValidity(); return; }
-    state.subjects.push({ id: uid(), ue, name, color: newSubColor });
+    state.subjects.push({ id: uid(), ue, name, color: SUB_COLORS[state.subjects.length % SUB_COLORS.length] });
     $("newSubject").value = ""; save(); render();
   };
   $("editUeForm").onsubmit = e => {
     e.preventDefault();
     const s = state.subjects.find(x => x.id === current.subjectId); if (!s) return;
-    s.ue = $("editUe").value.trim(); $("editUe").blur(); save(); render();
+    const ue = $("editUe").value.trim(), before = s.ue || "";
+    s.ue = ue; $("editUe").blur(); save(); render();
+    $("ueSaved").textContent = ue === before ? "C'est déjà son UE. Écris une autre UE dans la case, puis clique sur Changer." : ue ? "UE changée ✓" : "Matière retirée de son UE ✓";
+    $("ueSaved").hidden = false; clearTimeout($("ueSaved")._t); $("ueSaved")._t = setTimeout(() => $("ueSaved").hidden = true, 3500);
   };
   $("newSubject").oninput = $("newUe").oninput = () => $("newSubject").setCustomValidity("");
   $("addChapterForm").onsubmit = e => {
