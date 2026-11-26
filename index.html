@@ -231,12 +231,15 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       <div><b>⏩ Révision ratée</b><span>Décale-la en un clic, la suite se recale toute seule.</span></div>
       <div><b>📝 Fiches et flashcards</b><span>Ta fiche et tes cartes question/réponse dans chaque chapitre.</span></div>
       <div><b>🔴 Important</b><span>Marque les révisions urgentes, elles passent en haut.</span></div>
+      <div><b>☁️ Sur tous tes appareils</b><span>Ton compte enregistre tout : commence sur l'ordi, continue sur ton téléphone.</span></div>
+      <div><b>📸 Import en une photo</b><span>Une photo de ton emploi du temps et tes matières sont rangées d'un coup.</span></div>
+      <div><b>📄 Tes cours en PDF</b><span>Joins le PDF de chaque cours et ouvre-le directement dans Mémoria.</span></div>
       <div><b>🎨 À ton goût</b><span>Couleurs pastel au choix, mode sombre, sur téléphone et ordi.</span></div>
     </div>
 
     <div class="intro-end">
       <button class="btn primary big" id="introStart2">Commencer</button>
-      <span class="small muted">Gratuit et sans inscription. Tes révisions restent sur ton appareil.</span>
+      <span class="small muted">Gratuit. Crée ton compte en 30 secondes et retrouve tes révisions sur ton téléphone et ton ordi.</span>
     </div>
   </div>
 </section>
@@ -578,7 +581,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     </div>
   </section>
 
-  <p class="small muted" style="text-align:center" id="footNote">Tes révisions sont gardées dans ce navigateur, sur cet appareil. Crée un compte (menu ☰ › Mon compte) pour les retrouver partout.</p>
+  <p class="small muted" style="text-align:center" id="footNote">Tes révisions sont enregistrées sur ton compte : tu les retrouves sur tous tes appareils.</p>
 </div>
 
 <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-labelledby="viewerTitle">
@@ -1610,7 +1613,7 @@ UE22 Agents infectieux ; Virologie ; VIH ; 02/11/2026
     if (sbUser) $("accWho").textContent = sbUser.email || "";
     $("tab-account").textContent = sbUser ? "Mon compte ✓" : "Mon compte";
     $("tab-intro").hidden = !!sbUser; // la présentation ne sert plus une fois connecté
-    $("footNote").textContent = sbUser ? "Tes révisions sont enregistrées sur ton compte : tu les retrouves sur tous tes appareils." : sb ? "Tes révisions sont gardées dans ce navigateur, sur cet appareil. Crée un compte (menu ☰ › Mon compte) pour les retrouver partout." : "Tes révisions sont gardées dans ce navigateur, sur cet appareil.";
+    $("footNote").textContent = sbUser ? "Tes révisions sont enregistrées sur ton compte : tu les retrouves sur tous tes appareils." : "Tes révisions sont gardées dans ce navigateur, sur cet appareil.";
     if (current.view === "fiche") renderLink(curCh(), false);
   }
   const AUTH_ERRORS = {
