@@ -689,10 +689,10 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   $("welcomeGo").onclick = () => show("subjects");
   // page de présentation : affichée à la première visite, puis depuis le menu
   function showIntro(on) { $("intro").hidden = !on; $("app").hidden = on; window.scrollTo(0, 0); }
-  function startApp() { state.seenIntro = true; save(); showIntro(false); route(); }
+  function startApp() { state.seenIntro = true; save(); showIntro(false); if (gated()) { show("account"); $("accEmail").focus(); } else route(); }
   // où aller : connexion d'abord, puis démarrage guidé pour un nouveau compte, sinon Aujourd'hui
   function route() {
-    if (gated()) return show("account");
+    if (gated()) return showIntro(true); // pas connecté : on tombe d'abord sur la présentation
     if (!$("accConflict").hidden) return show("account");
     if (!state.setupDone && !state.subjects.length) openSetup();
     else show(state.subjects.length ? "today" : "subjects");
@@ -1676,7 +1676,7 @@ UE22 Agents infectieux ; Virologie ; VIH ; 02/11/2026
     state = { accent: state.accent, seenIntro: true, setupDone: true, example: false, dataVersion: 7, subjects: [], chapters: [] };
     Object.keys(pdfDocs).forEach(k => delete pdfDocs[k]); Object.keys(pdfCache).forEach(k => delete pdfCache[k]); Object.keys(pdfFiles).forEach(k => delete pdfFiles[k]);
     sbUser = null; recovering = false; pendingCloud = null; $("accConflict").hidden = true;
-    localSave(); $("accLogout").disabled = false; show("account");
+    localSave(); $("accLogout").disabled = false; show("account"); showIntro(true);
   };
 
   function startAuth() {
@@ -1692,7 +1692,7 @@ UE22 Agents infectieux ; Virologie ; VIH ; 02/11/2026
       if (recovering) { state.seenIntro = true; showIntro(false); show("account"); }
       // les appels à Supabase se font juste après (pas dans ce rappel)
       if (u && changed) setTimeout(async () => { await pullCloud(); authReady(); if (!recovering && $("intro").hidden) route(); }, 0);
-      else if (!u) { authReady(); if ($("intro").hidden && $("setup").hidden) show("account"); }
+      else if (!u) { authReady(); if (current.view !== "account") showIntro(true); }
       else authReady();
     });
     setTimeout(authReady, 6000); // au cas où la réponse tarde
@@ -1702,7 +1702,7 @@ UE22 Agents infectieux ; Virologie ; VIH ; 02/11/2026
   function authReady() {
     if (authKnown) return; authKnown = true;
     $("loading").hidden = true;
-    if (!state.seenIntro && !recovering) return showIntro(true);
+    if ((!state.seenIntro || gated()) && !recovering) return showIntro(true);
     if (!recovering) { showIntro(false); route(); }
   }
   function startAuthListeners() {
