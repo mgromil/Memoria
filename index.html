@@ -197,6 +197,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
 @media (prefers-reduced-motion: no-preference) { .task, .sub-card { transition: transform .15s ease; } .task:hover { transform: translateY(-1px); } }
 </style>
 
+<div id="loading" class="small" style="text-align:center;padding:40vh 16px 0;color:#888">Chargement…</div>
 <!-- PAGE DE PRÉSENTATION -->
 <section class="intro" id="intro" hidden>
   <div class="intro-in">
@@ -448,15 +449,15 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       <span class="small">« Celles de cet appareil » remplace ce qui est enregistré sur ton compte.</span>
     </div>
     <div class="card" id="accOut">
-      <h2>Mon compte</h2>
-      <p class="small muted" style="margin:0">Avec un compte gratuit, tes matières, fiches et révisions sont enregistrées en ligne : tu les retrouves sur ton téléphone et sur ton ordi. Tu peux aussi joindre le PDF de tes cours.</p>
+      <h2 id="accOutTitle">Mon compte</h2>
+      <p class="small muted" style="margin:0"><span id="accGateLead" hidden>Pour utiliser Mémoria, crée ton compte gratuit ou connecte-toi. </span>Avec un compte gratuit, tes matières, fiches et révisions sont enregistrées en ligne : tu les retrouves sur ton téléphone et sur ton ordi. Tu peux aussi joindre le PDF de tes cours.</p>
       <form id="accForm" style="display:grid;gap:8px">
         <label for="accEmail" class="small muted">Adresse mail</label>
         <input type="email" id="accEmail" autocomplete="email" required>
         <label for="accPass" class="small muted">Mot de passe (6 caractères minimum)</label>
         <input type="password" id="accPass" autocomplete="current-password" minlength="6" required>
         <div class="row"><button class="btn primary" id="accLogin" type="submit">Se connecter</button><button class="btn" id="accSignup" type="button">Créer mon compte</button></div>
-        <div class="row"><button class="btn ghost small" id="accForgot" type="button">Mot de passe oublié ?</button></div>
+        <div class="row"><button class="btn ghost small" id="accForgot" type="button">Mot de passe oublié ?</button><button class="btn ghost small" id="accIntro" type="button" hidden>Voir la présentation</button></div>
       </form>
       <span class="small" id="accMsg" role="status"></span>
     </div>
@@ -665,7 +666,11 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
 
   // ---------- Navigation ----------
   let current = { view: "today", subjectId: null, chapterId: null, from: "today" };
+  // connexion obligatoire : sans compte, seule la page « Mon compte » est accessible
+  const gated = () => !!(sb && !sbUser);
   function show(view) {
+    if (gated() && view !== "account") view = "account";
+    $("menuBtn").hidden = gated();
     current.view = view;
     ["today", "subjects", "subject", "fiche", "settings", "calendar", "account", "import"].forEach(v => $("view-" + v).hidden = v !== view);
     const section = view === "fiche" ? current.from : view === "subject" ? "subjects" : view;
@@ -684,8 +689,11 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   $("welcomeGo").onclick = () => show("subjects");
   // page de présentation : affichée à la première visite, puis depuis le menu
   function showIntro(on) { $("intro").hidden = !on; $("app").hidden = on; window.scrollTo(0, 0); }
-  function startApp() {
-    state.seenIntro = true; save(); showIntro(false);
+  function startApp() { state.seenIntro = true; save(); showIntro(false); route(); }
+  // où aller : connexion d'abord, puis démarrage guidé pour un nouveau compte, sinon Aujourd'hui
+  function route() {
+    if (gated()) return show("account");
+    if (!$("accConflict").hidden) return show("account");
     if (!state.setupDone && !state.subjects.length) openSetup();
     else show(state.subjects.length ? "today" : "subjects");
   }
@@ -751,6 +759,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   };
   $("introStart").onclick = startApp; $("introStart2").onclick = startApp;
   $("introLogin").onclick = () => { state.seenIntro = true; save(); showIntro(false); show("account"); $("accEmail").focus(); };
+  $("accIntro").onclick = () => showIntro(true);
   $("tab-intro").onclick = () => showIntro(true);
   // menu déroulant (les 3 barres)
   function setMenu(open) { $("mainMenu").hidden = !open; $("menuBtn").setAttribute("aria-expanded", open); }
@@ -1580,7 +1589,7 @@ UE22 Agents infectieux ; Virologie ; VIH ; 02/11/2026
       if (state.ownerId !== sbUser.id) {
         // 1re connexion sur cet appareil
         if (row && hasData(row.data) && hasData(state)) { pendingCloud = row; $("accConflict").hidden = false; show("account"); return; }
-        if (row && hasData(row.data)) { useCloud(row); if (current.view === "account") show("today"); }
+        if (row && hasData(row.data)) useCloud(row);
         else { state.ownerId = sbUser.id; await pushNow(); }
       } else if (row && row.updated_at !== state.cloudAt) useCloud(row);
       else setSync("Tout est enregistré sur ton compte ✓ (" + hhmm() + ")");
@@ -1592,6 +1601,9 @@ UE22 Agents infectieux ; Virologie ; VIH ; 02/11/2026
 
   function renderAccount() {
     $("accOff").hidden = !!sb;
+    $("accGateLead").hidden = $("accIntro").hidden = !gated();
+    $("accOutTitle").textContent = gated() ? "Bienvenue sur Mémoria 👋" : "Mon compte";
+    $("menuBtn").hidden = gated();
     $("accOut").hidden = !sb || !!sbUser;
     $("accIn").hidden = !sbUser;
     $("accNewPass").hidden = !(sbUser && recovering);
@@ -1679,17 +1691,30 @@ UE22 Agents infectieux ; Virologie ; VIH ; 02/11/2026
       renderAccount();
       if (recovering) { state.seenIntro = true; showIntro(false); show("account"); }
       // les appels à Supabase se font juste après (pas dans ce rappel)
-      if (u && changed) setTimeout(pullCloud, 0);
+      if (u && changed) setTimeout(async () => { await pullCloud(); authReady(); if (!recovering && $("intro").hidden) route(); }, 0);
+      else if (!u) { authReady(); if ($("intro").hidden && $("setup").hidden) show("account"); }
+      else authReady();
     });
+    setTimeout(authReady, 6000); // au cas où la réponse tarde
+  }
+  // au chargement : on attend de savoir si l'élève est connecté avant d'afficher le site
+  let authKnown = false;
+  function authReady() {
+    if (authKnown) return; authKnown = true;
+    $("loading").hidden = true;
+    if (!state.seenIntro && !recovering) return showIntro(true);
+    if (!recovering) { showIntro(false); route(); }
+  }
+  function startAuthListeners() {
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") pullCloud();
       else if (state.dirty) pushNow();
     });
   }
 
-  show("today");
-  if (!state.seenIntro) showIntro(true);
   startAuth();
+  if (!sb) { $("loading").hidden = true; if (!state.seenIntro) showIntro(true); else route(); }
+  else { $("app").hidden = true; startAuthListeners(); }
 })();
 </script>
 
