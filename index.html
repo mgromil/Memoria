@@ -1,0 +1,1173 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#b9a7e8">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Mémoria</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout : une colonne centrée (max 720px), onglets en haut, cartes sobres. Accent pastel choisi par l'étudiant. */
+:root {
+  --bg: #f7f6fa;
+  --surface: #ffffff;
+  --fg: #2b2838;
+  --muted: #6e6a80;
+  --line: #e6e3ee;
+  --accent: #b9a7e8;        /* remplacé par le choix de l'étudiant */
+  --accent-soft: #efeafb;
+  --accent-ink: #4b3a86;
+  --ok: #3f8f6b;
+  --ok-soft: #e1f3ea;
+  --late: #b4553d;
+  --late-soft: #fbe7e0;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1a22; --surface: #24232d; --fg: #ece9f5; --muted: #a29eb5; --line: #353341;
+    --accent-soft: #2f2b40; --accent-ink: #d9cffa;
+    --ok: #7fd1a8; --ok-soft: #1f3329; --late: #f0a58f; --late-soft: #3a2621;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b1a22; --surface: #24232d; --fg: #ece9f5; --muted: #a29eb5; --line: #353341;
+  --accent-soft: #2f2b40; --accent-ink: #d9cffa;
+  --ok: #7fd1a8; --ok-soft: #1f3329; --late: #f0a58f; --late-soft: #3a2621;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; align-items: baseline; gap: 10px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.9rem; margin: 0; letter-spacing: -0.02em; }
+h1 span { color: var(--accent); }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 500; font-size: 1.05rem; margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+.swatches { display: flex; gap: 8px; align-items: center; }
+.swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); cursor: pointer; padding: 0; }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--fg); }
+header { position: relative; flex-wrap: nowrap; }
+.menu-btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 12px; padding: 9px 12px; cursor: pointer; font: 600 0.9rem var(--font-body); }
+.menu-btn svg { display: block; }
+nav.menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; width: min(260px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 12px 30px rgba(40, 30, 70, 0.14); }
+nav.menu button.item { border: 0; background: transparent; color: var(--fg); font: 500 0.98rem var(--font-body); padding: 12px 14px; border-radius: 10px; cursor: pointer; text-align: left; }
+nav.menu button.item:hover { background: var(--bg); }
+nav.menu button.item[aria-current="page"] { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+nav.menu .menu-colors { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px 8px; border-top: 1px solid var(--line); margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.list { display: flex; flex-direction: column; gap: 10px; }
+.task { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--sub, var(--accent)); border-radius: 12px; padding: 12px 14px; }
+.task .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.82rem; color: var(--muted); }
+.task.important { border-left-color: var(--late); }
+.task .actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.task .shift { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-top: 8px; border-top: 1px dashed var(--line); }
+.task .shift input[type="date"] { font: 400 0.9rem var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; }
+button.btn.small { padding: 7px 11px; font-size: 0.85rem; }
+button.btn.warn[aria-pressed="true"] { background: var(--late-soft); color: var(--late); border-color: var(--late); }
+@media (max-width: 520px) { .task { grid-template-columns: 1fr; } .task .actions { justify-content: flex-start; } }
+.alert { background: var(--late-soft); color: var(--late); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem; }
+.alert.good { background: var(--ok-soft); color: var(--ok); }
+.alert strong { font-weight: 600; }
+.alert ul { margin: 0; padding-left: 18px; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cal-head h2 { text-transform: capitalize; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.cal-dow { text-align: center; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: 2px; }
+.cal-day { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; min-height: 58px; padding: 5px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; cursor: pointer; font: inherit; color: inherit; text-align: left; min-width: 0; }
+.cal-day.out { opacity: 0.4; }
+.cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+.cal-day.heavy { background: var(--late-soft); border-color: var(--late); }
+.cal-day[aria-pressed="true"] { border-color: var(--fg); }
+.cal-day .num { font-size: 0.8rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cal-day .n { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.cal-day.heavy .n { color: var(--late); }
+.cal-day .ok { font-size: 0.72rem; color: var(--ok); font-weight: 600; }
+.dots { display: flex; gap: 2px; flex-wrap: wrap; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: var(--muted); }
+.task.done { opacity: 0.7; }
+.fcard { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: start; }
+.fcard .q { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.fcard .a { color: var(--muted); grid-column: 1; min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.fcard .x { grid-row: 1 / span 2; grid-column: 2; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 4px; }
+#cardsEdit { display: flex; flex-direction: column; gap: 14px; }
+.cardform { display: flex; flex-direction: column; gap: 8px; }
+.quiz { display: flex; flex-direction: column; gap: 12px; background: var(--accent-soft); border-radius: 14px; padding: 18px; }
+.quiz-q { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--fg); overflow-wrap: anywhere; }
+.quiz-a { background: var(--surface); border-radius: 10px; padding: 12px 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+select { font: 400 0.95rem var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; }
+.linkbox { display: flex; flex-direction: column; gap: 8px; }
+a.btn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 0.9rem var(--font-body); padding: 9px 14px; border-radius: 10px; }
+a.btn.primary { background: var(--accent); border-color: var(--accent); color: #1f1a33; }
+.task .meta a { color: var(--accent-ink); font-weight: 600; text-decoration: none; }
+.task .meta a:hover { text-decoration: underline; }
+.viewer { position: fixed; inset: 0; z-index: 50; background: var(--bg); display: flex; flex-direction: column; }
+.viewer-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: calc(10px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); background: var(--surface); border-bottom: 1px solid var(--line); }
+.viewer-title { font-weight: 600; font-size: 0.9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: center; }
+.viewer-pages { flex: 1; overflow: auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.viewer-pages canvas { background: #fff; box-shadow: 0 2px 10px rgba(40, 30, 70, 0.12); border-radius: 4px; max-width: none; }
+.viewer-pages .vmsg { color: var(--muted); padding: 40px 0; text-align: center; }
+.intro { background: var(--bg); }
+.intro-in { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; padding-block: 12px 40px; }
+.intro-brand { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; }
+.intro-brand span, .intro-title { color: var(--fg); }
+.intro-brand span { color: var(--accent); }
+.intro-title { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 7vw, 3.2rem); line-height: 1.05; letter-spacing: -0.03em; margin: 8px 0 0; text-wrap: balance; }
+.intro-lead { font-size: 1.08rem; color: var(--muted); max-width: 58ch; margin: 0; line-height: 1.6; }
+.intro-lead strong { color: var(--fg); }
+.intro-h2 { font-family: var(--font-display); font-size: 1.35rem; margin: 14px 0 0; }
+button.btn.big { padding: 13px 22px; font-size: 1rem; border-radius: 12px; }
+.jline { margin: 8px 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px 16px 16px; display: flex; flex-direction: column; gap: 14px; }
+.jrow { position: relative; display: flex; justify-content: space-between; gap: 4px; }
+.jrow::before { content: ""; position: absolute; left: 22px; right: 22px; top: 21px; height: 4px; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent-soft)); }
+.jdot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; min-width: 0; }
+.jdot b { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #1f1a33; font: 700 0.85rem var(--font-body); box-shadow: 0 0 0 4px var(--surface); }
+.jdot span { font-size: 0.7rem; color: var(--muted); line-height: 1.2; }
+.jline figcaption { font-size: 0.85rem; color: var(--muted); }
+.steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 10px; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 36px 1fr; gap: 2px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.steps li::before { content: counter(s); grid-row: span 2; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); font-weight: 700; }
+.steps li span, .feats span { color: var(--muted); font-size: 0.9rem; }
+.feats { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.feats div { display: flex; flex-direction: column; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.intro-end { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 10px; }
+.jchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.jchip { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-soft); color: var(--accent-ink); border-radius: 999px; padding: 6px 6px 6px 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.jchip button { border: 0; background: var(--surface); color: var(--muted); width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 0.8rem; line-height: 1; }
+input[type="number"] { font: 400 0.95rem var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 110px; }
+.task .title { font-weight: 600; cursor: pointer; }
+.task .title:hover { text-decoration: underline; }
+.pill { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); letter-spacing: 0.02em; }
+.pill.late { background: var(--late-soft); color: var(--late); }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.todo { background: transparent; border: 1px dashed var(--line); color: var(--muted); }
+button.btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 0.9rem var(--font-body); padding: 9px 14px; border-radius: 10px; cursor: pointer; }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: #1f1a33; }
+button.btn.ghost { background: transparent; }
+button.btn:hover { filter: brightness(0.97); }
+button.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+input[type="text"], textarea { width: 100%; font: 400 0.95rem var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.row input[type="text"] { flex: 1 1 180px; width: auto; }
+textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
+.grid-sub { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.sub-card { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 6px; font: inherit; color: inherit; border-top: 6px solid var(--sub); }
+.sub-card .pill { align-self: flex-start; }
+.sub-card:hover { border-color: var(--sub); }
+.ue-title { grid-column: 1 / -1; margin-top: 10px; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--font-body); font-weight: 600; }
+.ue-title:first-child { margin-top: 0; }
+.chapter { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); }
+.chapter:first-child { border-top: 0; padding-top: 0; }
+.chapter .head { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+.back { border: 0; background: none; color: var(--accent-ink); font: 600 0.9rem var(--font-body); cursor: pointer; padding: 0; align-self: flex-start; }
+.empty { text-align: center; padding: 24px 12px; color: var(--muted); }
+.banner { background: var(--accent-soft); color: var(--accent-ink); border-radius: 12px; padding: 10px 14px; font-size: 0.88rem; display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+.colors { display: flex; gap: 6px; }
+.colors .swatch { width: 22px; height: 22px; }
+.saved { font-size: 0.8rem; color: var(--ok); }
+.count { font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; line-height: 1; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: no-preference) { .task, .sub-card { transition: transform .15s ease; } .task:hover { transform: translateY(-1px); } }
+</style>
+
+<!-- PAGE DE PRÉSENTATION -->
+<section class="intro" id="intro" hidden>
+  <div class="intro-in">
+    <div class="intro-brand">Mémoria<span>.</span></div>
+    <h1 class="intro-title">Révise au bon moment,<br>retiens pour de bon.</h1>
+    <p class="intro-lead">Mémoria organise tes révisions avec la <strong>méthode des J</strong> : tu revois chaque chapitre juste avant de l'oublier. Le site te dit chaque jour quoi réviser.</p>
+    <div class="row"><button class="btn primary big" id="introStart">Commencer, c'est gratuit</button></div>
+
+    <figure class="jline" aria-label="Exemple : un chapitre est révisé à J0, J3, J7, J14 et J30">
+      <div class="jrow">
+        <div class="jdot"><b>J0</b><span>jour du cours</span></div>
+        <div class="jdot"><b>J3</b><span>+3 jours</span></div>
+        <div class="jdot"><b>J7</b><span>+4 jours</span></div>
+        <div class="jdot"><b>J14</b><span>+7 jours</span></div>
+        <div class="jdot"><b>J30</b><span>+16 jours</span></div>
+      </div>
+      <figcaption>Chaque révision espace un peu plus la suivante. Tu peux choisir tes propres J.</figcaption>
+    </figure>
+
+    <h2 class="intro-h2">Comment ça marche</h2>
+    <ol class="steps">
+      <li><b>Ajoute tes matières</b><span>Rangées par UE si tu en as, avec les chapitres de chaque matière.</span></li>
+      <li><b>Ajoute un chapitre après le cours</b><span>Mémoria planifie tout seul ses révisions à J0, J3, J7, J14 et J30.</span></li>
+      <li><b>Ouvre Mémoria chaque jour</b><span>Tes J du jour s'affichent dès l'ouverture. Tu coches « Fait » et c'est tout.</span></li>
+    </ol>
+
+    <h2 class="intro-h2">Ce que tu y trouves</h2>
+    <div class="feats">
+      <div><b>📅 Calendrier</b><span>Toutes tes révisions du mois d'un coup d'œil.</span></div>
+      <div><b>⚖️ Charge lissée</b><span>Tu fixes un maximum par jour, Mémoria répartit le surplus.</span></div>
+      <div><b>⏩ Révision ratée</b><span>Décale-la en un clic, la suite se recale toute seule.</span></div>
+      <div><b>📝 Fiches et flashcards</b><span>Ta fiche et tes cartes question/réponse dans chaque chapitre.</span></div>
+      <div><b>🔴 Important</b><span>Marque les révisions urgentes, elles passent en haut.</span></div>
+      <div><b>🎨 À ton goût</b><span>Couleurs pastel au choix, mode sombre, sur téléphone et ordi.</span></div>
+    </div>
+
+    <div class="intro-end">
+      <button class="btn primary big" id="introStart2">Commencer</button>
+      <span class="small muted">Gratuit et sans inscription. Tes révisions restent sur ton appareil.</span>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" id="app">
+  <header>
+    <div class="brand"><h1>Mémoria<span>.</span></h1><span class="muted small" id="pageName">Aujourd'hui</span></div>
+    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mainMenu" aria-label="Ouvrir le menu">
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+    </button>
+    <nav class="menu" id="mainMenu" hidden>
+      <button class="item" id="tab-today">Aujourd'hui</button>
+      <button class="item" id="tab-subjects">Matières</button>
+      <button class="item" id="tab-calendar">Calendrier</button>
+      <button class="item" id="tab-settings">Réglages</button>
+      <button class="item" id="tab-intro">Présentation</button>
+      <div class="menu-colors"><span>Couleur</span><div class="swatches" id="accentPicker" aria-label="Couleur du site"></div></div>
+    </nav>
+  </header>
+
+
+
+  <!-- AUJOURD'HUI -->
+  <section id="view-today" class="wrap" style="gap:16px">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="muted small" id="todayDate"></div>
+          <h2>Tes J du jour</h2>
+        </div>
+        <div class="count" id="todayCount">0</div>
+      </div>
+    </div>
+    <div class="card" id="maxSetup" hidden>
+      <h3>Combien de révisions maximum par jour ?</h3>
+      <p class="small muted" style="margin:0">Mémoria te prévient quand une journée dépasse ce nombre et peut répartir le surplus sur les jours suivants.</p>
+      <form class="row" id="maxSetupForm">
+        <input type="number" id="maxSetupInput" min="1" max="50" step="1" value="6" required>
+        <button class="btn primary" type="submit">Valider</button>
+      </form>
+    </div>
+    <div class="alert" id="loadAlert" hidden></div>
+    <div class="card" id="welcome" hidden>
+      <h2>Bienvenue sur Mémoria 👋</h2>
+      <p style="margin:0">Mémoria planifie tes révisions avec la méthode des J : tu ajoutes un chapitre le jour où tu le vois en cours, et le site te dit quand le revoir (J0, J3, J7, J14, J30, ou tes propres J).</p>
+      <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px">
+        <li>Ajoute tes matières (et leur UE si tu en as).</li>
+        <li>Dans chaque matière, ajoute tes chapitres.</li>
+        <li>Reviens ici chaque jour pour voir tes J du jour.</li>
+      </ol>
+      <div class="row"><button class="btn primary" id="welcomeGo">Ajouter ma première matière</button></div>
+    </div>
+    <div class="list" id="todayList"></div>
+    <h3 style="margin-top:8px">Les 7 prochains jours</h3>
+    <div class="list" id="nextList"></div>
+  </section>
+
+  <!-- MATIÈRES -->
+  <section id="view-subjects" class="wrap" style="gap:16px" hidden>
+    <div class="card">
+      <h2>Mes matières</h2>
+      <form class="row" id="addSubjectForm">
+        <input type="text" id="newUe" list="ueList" placeholder="UE (facultatif, ex. UE21)" maxlength="40">
+        <input type="text" id="newSubject" placeholder="Matière (ex. Physiologie)" maxlength="40" required>
+        <datalist id="ueList"></datalist>
+        <button class="btn primary" type="submit">Ajouter</button>
+      </form>
+      <div class="row small muted">Couleur : <div class="colors" id="subjectColors"></div></div>
+    </div>
+    <div class="grid-sub" id="subjectGrid"></div>
+  </section>
+
+  <!-- UNE MATIÈRE -->
+  <section id="view-subject" class="wrap" style="gap:16px" hidden>
+    <button class="back" id="backToSubjects">← Mes matières</button>
+    <div class="card">
+      <div class="muted small" id="subjectUe"></div>
+      <h2 id="subjectTitle"></h2>
+      <form class="row" id="editUeForm">
+        <label for="editUe" class="small muted">UE de cette matière :</label>
+        <input type="text" id="editUe" list="ueList" placeholder="Aucune" maxlength="40">
+        <button class="btn small" type="submit">Changer</button>
+      </form>
+      <form class="row" id="addChapterForm">
+        <input type="text" id="newChapter" placeholder="Nouveau chapitre ou notion" maxlength="80" required>
+        <button class="btn primary" type="submit">Ajouter</button>
+      </form>
+      <p class="small muted" style="margin:0" id="jHint"></p>
+      <div class="alert" id="chapterAlert" hidden></div>
+    </div>
+    <div class="card" id="chapterList"></div>
+  </section>
+
+  <!-- CALENDRIER -->
+  <section id="view-calendar" class="wrap" style="gap:16px" hidden>
+    <div class="card">
+      <div class="cal-head">
+        <button class="btn small" id="calPrev" aria-label="Mois précédent">‹</button>
+        <h2 id="calTitle"></h2>
+        <button class="btn small" id="calNext" aria-label="Mois suivant">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="legend"><span>Chiffre = révisions à faire</span><span style="color:var(--ok)">✓ = faites</span><span style="color:var(--late)">Rouge = au-dessus de ton max</span></div>
+    </div>
+    <h3 id="calDayTitle"></h3>
+    <div class="list" id="calDayList"></div>
+  </section>
+
+  <!-- RÉGLAGES -->
+  <section id="view-settings" class="wrap" style="gap:16px" hidden>
+    <div class="card">
+      <h2>Mes J</h2>
+      <p class="small muted" style="margin:0">Choisis à quels jours tu révises un chapitre après l'avoir vu en cours. Ça s'applique aux chapitres que tu ajoutes ensuite.</p>
+      <div class="jchips" id="jChips"></div>
+      <form class="row" id="addJForm">
+        <label for="newJ" class="small muted">Ajouter un J :</label>
+        <input type="number" id="newJ" min="0" max="365" step="1" placeholder="ex. 60" required>
+        <button class="btn primary" type="submit">Ajouter</button>
+      </form>
+      <div class="row"><button class="btn ghost" id="resetJ">Revenir à J0, J3, J7, J14, J30</button></div>
+    </div>
+    <div class="card">
+      <h2>Ma charge par jour</h2>
+      <p class="small muted" style="margin:0">Au-delà de ce nombre de révisions dans une journée, Mémoria t'alerte et te propose de lisser.</p>
+      <form class="row" id="maxForm">
+        <label for="maxInput" class="small muted">Maximum par jour :</label>
+        <input type="number" id="maxInput" min="1" max="50" step="1" required>
+        <button class="btn primary" type="submit">Enregistrer</button>
+        <span class="saved" id="maxSaved" hidden>Enregistré</span>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Repartir de zéro</h2>
+      <p class="small muted" style="margin:0">Efface toutes tes matières, chapitres, fiches et révisions de cet appareil. Tes réglages sont gardés.</p>
+      <div class="row"><button class="btn ghost" id="clearAll">Tout effacer</button></div>
+      <div class="banner" id="confirmClear" hidden>
+        <span><strong>Étape 1 sur 2.</strong> Tu vas effacer toutes tes matières, chapitres, fiches et révisions. Ça ne peut pas être annulé. Tu es sûr ?</span>
+        <span class="row"><button class="btn ghost" id="cancelClear">Non, garder</button><button class="btn" id="nextClear">Oui, continuer</button></span>
+      </div>
+      <div class="alert" id="confirmClear2" hidden>
+        <label for="clearWord"><strong>Étape 2 sur 2.</strong> Pour confirmer, écris EFFACER en majuscules :</label>
+        <input type="text" id="clearWord" autocomplete="off" placeholder="EFFACER">
+        <span class="row"><button class="btn ghost" id="cancelClear2">Non, garder</button><button class="btn primary" id="okClear" disabled>Tout effacer définitivement</button></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- UNE FICHE -->
+  <section id="view-fiche" class="wrap" style="gap:16px" hidden>
+    <button class="back" id="backToSubject">← Retour</button>
+    <div class="card">
+      <div class="muted small" id="ficheSubject"></div>
+      <h2 id="ficheTitle"></h2>
+      <div class="row" id="ficheJs"></div>
+      <div class="linkbox">
+        <div class="row" id="pdfView" hidden>
+          <button class="btn primary" id="pdfOpen" type="button">📄 Ouvrir mon cours</button>
+          <span class="small muted" id="pdfName"></span>
+          <button class="btn ghost small" id="pdfReplace" type="button">Remplacer</button>
+          <button class="btn ghost small" id="pdfRemove" type="button">Retirer</button>
+        </div>
+        <div class="row" id="pdfPick" hidden>
+          <button class="btn primary" id="pdfBtn" type="button">📎 Choisir le PDF du cours</button>
+          <input type="file" id="pdfInput" accept="application/pdf,.pdf" hidden>
+        </div>
+        <span class="small" id="pdfMsg"></span>
+        <div class="row" id="linkView" hidden>
+          <a class="btn primary" id="linkOpen" target="_blank" rel="noopener noreferrer">📄 Ouvrir mon cours</a>
+          <button class="btn ghost small" id="linkEdit" type="button">Changer le lien</button>
+        </div>
+        <form class="row" id="linkForm">
+          <label for="linkInput" class="small muted" id="linkLabel">Lien vers ton cours :</label>
+          <input type="text" inputmode="url" autocomplete="off" id="linkInput" placeholder="https://drive.google.com/…" maxlength="1000">
+          <button class="btn small" type="submit">Enregistrer</button>
+          <span class="small" id="linkMsg"></span>
+        </form>
+      </div>
+      <label for="ficheText" class="small muted">Ta fiche</label>
+      <textarea id="ficheText" placeholder="Écris ici les points clés, formules, définitions…"></textarea>
+      <div class="row" style="justify-content:space-between">
+        <span class="saved" id="savedMsg" hidden>Enregistré</span>
+        <button class="btn ghost" id="deleteChapter">Supprimer ce chapitre</button>
+      </div>
+      <div class="banner" id="confirmDelete" hidden>
+        <span>Supprimer ce chapitre et sa fiche ?</span>
+        <span class="row"><button class="btn ghost" id="cancelDelete">Annuler</button><button class="btn primary" id="okDelete">Supprimer</button></span>
+      </div>
+    </div>
+
+    <div class="card" id="cardsBox">
+      <div class="row" style="justify-content:space-between">
+        <h2>Flashcards</h2>
+        <button class="btn primary" id="startQuiz">Réviser mes cartes</button>
+      </div>
+
+      <div id="quiz" class="quiz" hidden>
+        <div class="small muted" id="quizProgress"></div>
+        <div class="quiz-q" id="quizQ"></div>
+        <div class="quiz-a" id="quizA" hidden></div>
+        <div class="row" id="quizBtns"></div>
+      </div>
+
+      <div id="cardsEdit">
+        <div class="row" id="aiRow" hidden>
+          <button class="btn" id="aiGen">✨ Générer avec l'IA</button>
+          <button class="btn ghost small" id="aiStop" hidden>Arrêter</button>
+          <span class="small muted" id="aiMsg">Claude lit le PDF de ton cours (surlignages en priorité) et ta fiche, et en tire des cartes.</span>
+        </div>
+        <div class="list" id="cardList"></div>
+        <form class="cardform" id="addCardForm">
+          <label for="newQ" class="small muted">Nouvelle carte</label>
+          <input type="text" id="newQ" placeholder="Question (ex. Formule de Bernoulli ?)" maxlength="300" required>
+          <input type="text" id="newA" placeholder="Réponse" maxlength="600" required>
+          <div class="row"><button class="btn primary" type="submit">Ajouter la carte</button></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <p class="small muted" style="text-align:center">Tes révisions sont gardées dans ce navigateur, sur cet appareil.</p>
+</div>
+
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-labelledby="viewerTitle">
+  <div class="viewer-bar">
+    <button class="btn small" id="viewerClose">← Fermer</button>
+    <span class="viewer-title" id="viewerTitle"></span>
+    <span class="row" style="gap:6px">
+      <button class="btn small" id="zoomOut" aria-label="Dézoomer">−</button>
+      <button class="btn small" id="zoomIn" aria-label="Zoomer">+</button>
+    </span>
+  </div>
+  <div class="viewer-pages" id="viewerPages"></div>
+</div>
+
+<script>
+(function () {
+  // ---------- Réglages ----------
+  const J_DEFAUT = [0, 3, 7, 14, 30];
+  const ACCENTS = { Lavande: "#b9a7e8", Menthe: "#9fd8c0", Pêche: "#f5b998", Ciel: "#9cc7ec", Rose: "#f1a7c3" };
+  const SUB_COLORS = ["#b9a7e8", "#9fd8c0", "#f5b998", "#9cc7ec", "#f1a7c3", "#e8d58f"];
+  const KEY = "memoria-v1";
+
+  // ---------- Dates (en heure locale) ----------
+  function iso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function addDays(isoStr, n) { const [y, m, d] = isoStr.split("-").map(Number); return iso(new Date(y, m - 1, d + n)); }
+  const TODAY = iso(new Date());
+  function daysBetween(a, b) { const [y1, m1, d1] = a.split("-").map(Number); const [y2, m2, d2] = b.split("-").map(Number); return Math.round((new Date(y2, m2 - 1, d2) - new Date(y1, m1 - 1, d1)) / 86400000); }
+  function pretty(isoStr) { const [y, m, d] = isoStr.split("-").map(Number); return new Date(y, m - 1, d).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); }
+
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  function myJs() { return (state && state.jList && state.jList.length) ? state.jList : J_DEFAUT; }
+  function makeReviews(start) { return myJs().map(j => ({ j, date: addDays(start, j), done: false })); }
+
+  // ---------- Sauvegarde ----------
+  let state;
+  try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) { state = null; }
+  // on charge le tableau de Malo une fois (même si le navigateur avait gardé une ancienne version de test), en gardant ses réglages
+  // site vierge : chaque étudiant commence avec ses propres matières
+  if (!state || !Array.isArray(state.subjects) || !Array.isArray(state.chapters)) state = { accent: (state && state.accent) || "Lavande", example: false, dataVersion: 7, subjects: [], chapters: [] };
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  save();
+
+  // ---------- Couleur du site ----------
+  const $ = id => document.getElementById(id);
+  function applyAccent() {
+    const c = ACCENTS[state.accent] || ACCENTS.Lavande;
+    document.documentElement.style.setProperty("--accent", c);
+    $("accentPicker").querySelectorAll(".swatch").forEach(b => b.setAttribute("aria-pressed", b.dataset.name === state.accent));
+  }
+  Object.entries(ACCENTS).forEach(([name, c]) => {
+    const b = document.createElement("button");
+    b.className = "swatch"; b.style.background = c; b.dataset.name = name; b.title = name; b.setAttribute("aria-label", "Couleur " + name);
+    b.onclick = () => { state.accent = name; save(); applyAccent(); };
+    $("accentPicker").appendChild(b);
+  });
+
+  let newSubColor = SUB_COLORS[0];
+  SUB_COLORS.forEach(c => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "swatch"; b.style.background = c; b.setAttribute("aria-label", "Couleur de matière");
+    b.onclick = () => { newSubColor = c; $("subjectColors").querySelectorAll(".swatch").forEach(x => x.setAttribute("aria-pressed", x === b)); };
+    b.setAttribute("aria-pressed", c === newSubColor);
+    $("subjectColors").appendChild(b);
+  });
+
+  // ---------- Navigation ----------
+  let current = { view: "today", subjectId: null, chapterId: null, from: "today" };
+  function show(view) {
+    current.view = view;
+    ["today", "subjects", "subject", "fiche", "settings", "calendar"].forEach(v => $("view-" + v).hidden = v !== view);
+    const section = view === "fiche" ? current.from : view === "subject" ? "subjects" : view;
+    const names = { today: "Aujourd'hui", subjects: "Matières", subject: "Matières", calendar: "Calendrier", settings: "Réglages" };
+    ["today", "subjects", "calendar", "settings"].forEach(v => $("tab-" + v).setAttribute("aria-current", v === section ? "page" : "false"));
+    $("pageName").textContent = names[section] || "";
+    render();
+    window.scrollTo(0, 0);
+  }
+  $("tab-today").onclick = () => show("today");
+  $("tab-subjects").onclick = () => show("subjects");
+  $("tab-settings").onclick = () => show("settings");
+  $("tab-calendar").onclick = () => show("calendar");
+  $("welcomeGo").onclick = () => show("subjects");
+  // page de présentation : affichée à la première visite, puis depuis le menu
+  function showIntro(on) { $("intro").hidden = !on; $("app").hidden = on; window.scrollTo(0, 0); }
+  function startApp() { state.seenIntro = true; save(); showIntro(false); show(state.subjects.length ? "today" : "subjects"); }
+  $("introStart").onclick = startApp; $("introStart2").onclick = startApp;
+  $("tab-intro").onclick = () => showIntro(true);
+  // menu déroulant (les 3 barres)
+  function setMenu(open) { $("mainMenu").hidden = !open; $("menuBtn").setAttribute("aria-expanded", open); }
+  $("menuBtn").onclick = e => { e.stopPropagation(); setMenu($("mainMenu").hidden); };
+  $("mainMenu").querySelectorAll("button.item").forEach(b => b.addEventListener("click", () => setMenu(false)));
+  document.addEventListener("click", e => { if (!$("mainMenu").contains(e.target) && e.target !== $("menuBtn")) setMenu(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") setMenu(false); });
+  $("backToSubjects").onclick = () => show("subjects");
+  $("backToSubject").onclick = () => show(current.from === "today" ? "today" : current.from === "calendar" ? "calendar" : "subject");
+
+  const subOf = ch => state.subjects.find(s => s.id === ch.subjectId) || { name: "?", color: "#ccc" };
+  const nextReview = ch => ch.reviews.find(r => !r.done);
+  const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function openFiche(chId, from) { current.chapterId = chId; current.from = from; quiz = null; show("fiche"); }
+
+  // ---------- Rendu ----------
+  // Décaler une révision ratée. SHIFT_ALL = true : les J suivants reculent du même nombre de jours.
+  const SHIFT_ALL = true;
+  function moveReview(ch, r, newDate) {
+    const delta = daysBetween(r.date, newDate);
+    const i = ch.reviews.indexOf(r);
+    r.date = newDate;
+    if (SHIFT_ALL) ch.reviews.slice(i + 1).forEach(n => { if (!n.done) n.date = addDays(n.date, delta); });
+  }
+  function shiftReview(ch, r, newDate) { moveReview(ch, r, newDate); lastSmooth = null; save(); render(); }
+
+  // ---------- Charge par jour et lissage ----------
+  let lastSmooth = null; // { moved, backup } pour pouvoir annuler
+  // les révisions d'un jour : aujourd'hui = tout ce qui est en retard ou prévu aujourd'hui
+  function itemsOn(day) {
+    const items = [];
+    state.chapters.forEach(ch => {
+      const nx = nextReview(ch);
+      ch.reviews.forEach(r => {
+        if (r.done) return;
+        if (day === TODAY ? (r === nx && r.date <= TODAY) : r.date === day) items.push([ch, r]);
+      });
+    });
+    return items;
+  }
+  // ordre de priorité : Important, puis J0 (cours du jour), puis le plus en retard, puis le plus petit J
+  const priority = (a, b) => (!!b[1].important - !!a[1].important) || ((a[1].j !== 0) - (b[1].j !== 0)) || a[1].date.localeCompare(b[1].date) || a[1].j - b[1].j;
+  function overloadedDays(horizon) {
+    const out = [];
+    if (!state.maxPerDay) return out;
+    for (let k = 1; k <= horizon; k++) { const d = addDays(TODAY, k); const n = itemsOn(d).length; if (n > state.maxPerDay) out.push([d, n]); }
+    return out;
+  }
+  function smooth() {
+    const max = state.maxPerDay; if (!max) return;
+    const backup = JSON.stringify(state.chapters);
+    let moved = 0;
+    for (let k = 0; k < 90; k++) {
+      const day = addDays(TODAY, k);
+      const items = itemsOn(day).sort(priority);
+      items.slice(max).forEach(([ch, r]) => { moveReview(ch, r, addDays(day, 1)); moved++; });
+    }
+    lastSmooth = { moved, backup };
+    save(); render();
+  }
+  const shortDay = d => { const [y, m, dd] = d.split("-").map(Number); return new Date(y, m - 1, dd).toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }); };
+
+  function taskEl(ch, r, withDone) {
+    const sub = subOf(ch);
+    const el = document.createElement("div");
+    el.className = "task" + (r.important ? " important" : ""); el.style.setProperty("--sub", sub.color);
+    const late = r.date < TODAY;
+    let when = "";
+    if (late) when = `<span class="pill late">en retard de ${daysBetween(r.date, TODAY)} j</span>`;
+    else if (r.date > TODAY) when = `<span>${pretty(r.date)}</span>`;
+    const imp = (r.important ? `<span class="pill late">Important</span>` : "") + (r.done ? `<span class="pill ok">Fait ✓</span>` : "");
+    if (r.done) { when = ""; el.classList.add("done"); }
+    el.innerHTML = `<div style="min-width:0"><div class="meta"><span>${esc(sub.name)}${sub.ue ? " · " + esc(sub.ue.split(" ")[0]) : ""}</span><span class="pill">J${r.j}</span>${imp}${when}</div>
+      <div class="title">${esc(ch.title)}</div></div>`;
+    el.querySelector(".title").onclick = () => openFiche(ch.id, current.view === "calendar" ? "calendar" : "today");
+    if (ch.pdf && ch.pdf.id) {
+      const a = document.createElement("a"); a.href = "#"; a.textContent = "📄 Cours";
+      a.onclick = e => { e.preventDefault(); openViewer(ch); };
+      el.querySelector(".meta").appendChild(a);
+    } else if (safeUrl(ch.link)) {
+      const a = document.createElement("a"); a.href = safeUrl(ch.link); a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = "📄 Cours";
+      el.querySelector(".meta").appendChild(a);
+    }
+    if (withDone) {
+      const actions = document.createElement("div"); actions.className = "actions";
+      const bImp = document.createElement("button");
+      bImp.className = "btn small warn"; bImp.textContent = "Important"; bImp.setAttribute("aria-pressed", !!r.important);
+      bImp.onclick = () => { r.important = !r.important; save(); render(); };
+      const bShift = document.createElement("button");
+      bShift.className = "btn small"; bShift.textContent = "Décaler";
+      const bDone = document.createElement("button");
+      bDone.className = "btn small primary"; bDone.textContent = "Fait ✓";
+      bDone.onclick = () => { r.done = true; r.doneOn = TODAY; r.important = false; save(); render(); };
+      actions.append(bImp, bShift, bDone);
+      el.appendChild(actions);
+
+      const panel = document.createElement("div"); panel.className = "shift"; panel.hidden = true;
+      panel.innerHTML = `<span class="small muted">Décaler à :</span>
+        <button class="btn small" data-d="1">Demain</button>
+        <button class="btn small" data-d="2">Dans 2 jours</button>
+        <input type="date" aria-label="Choisir une date" min="${addDays(TODAY, 1)}">
+        <span class="small muted">${SHIFT_ALL ? "Les J suivants seront décalés aussi." : ""}</span>`;
+      panel.querySelectorAll("button[data-d]").forEach(b => b.onclick = () => shiftReview(ch, r, addDays(TODAY, +b.dataset.d)));
+      panel.querySelector("input").onchange = e => { if (e.target.value > TODAY) shiftReview(ch, r, e.target.value); };
+      bShift.onclick = () => { panel.hidden = !panel.hidden; };
+      el.appendChild(panel);
+    }
+    return el;
+  }
+
+  function renderToday() {
+    $("todayDate").textContent = pretty(TODAY).replace(/^./, c => c.toUpperCase());
+    const due = [], next = [];
+    state.chapters.forEach(ch => {
+      const r = nextReview(ch); if (!r) return;
+      if (r.date <= TODAY) due.push([ch, r]);
+      else if (daysBetween(TODAY, r.date) <= 7) next.push([ch, r]);
+    });
+    due.sort((a, b) => (!!b[1].important - !!a[1].important) || a[1].date.localeCompare(b[1].date));
+    next.sort((a, b) => a[1].date.localeCompare(b[1].date));
+    $("todayCount").textContent = due.length;
+    $("welcome").hidden = state.subjects.length > 0;
+    $("maxSetup").hidden = !!state.maxPerDay;
+    const al = $("loadAlert");
+    const over = overloadedDays(14);
+    if (lastSmooth) {
+      al.className = "alert good"; al.hidden = false;
+      al.innerHTML = lastSmooth.moved
+        ? `<span><strong>${lastSmooth.moved} révision${lastSmooth.moved > 1 ? "s" : ""} déplacée${lastSmooth.moved > 1 ? "s" : ""}</strong> sur les jours suivants. Aucune journée ne dépasse maintenant ${state.maxPerDay} révisions.</span><div class="row"><button class="btn small" id="undoSmooth">Annuler</button></div>`
+        : `<span>Rien à déplacer : aucune journée ne dépasse ${state.maxPerDay} révisions.</span>`;
+      const u = $("undoSmooth"); if (u) u.onclick = () => { state.chapters = JSON.parse(lastSmooth.backup); lastSmooth = null; save(); render(); };
+    } else if (state.maxPerDay && (due.length > state.maxPerDay || over.length)) {
+      al.className = "alert"; al.hidden = false;
+      let html = "";
+      if (due.length > state.maxPerDay) html += `<span><strong>Tu as ${due.length} révisions aujourd'hui</strong> pour un maximum de ${state.maxPerDay}.</span>`;
+      if (over.length) html += `<span>Jours chargés à venir :</span><ul>${over.map(([d, n]) => `<li>${shortDay(d)} : ${n} révisions</li>`).join("")}</ul>`;
+      html += `<div class="row"><button class="btn small primary" id="smoothBtn">Lisser mes révisions</button><span class="small">Les moins urgentes passent aux jours suivants, les « Important » et les J0 restent.</span></div>`;
+      al.innerHTML = html;
+      $("smoothBtn").onclick = smooth;
+    } else al.hidden = true;
+    const tl = $("todayList"); tl.innerHTML = "";
+    if (!due.length) tl.innerHTML = `<div class="card empty">Rien à réviser aujourd'hui. Profites-en, ou ajoute un nouveau chapitre dans « Mes matières ».</div>`;
+    due.forEach(([ch, r]) => tl.appendChild(taskEl(ch, r, true)));
+    const nl = $("nextList"); nl.innerHTML = "";
+    if (!next.length) nl.innerHTML = `<div class="muted small">Aucune révision prévue cette semaine.</div>`;
+    next.forEach(([ch, r]) => nl.appendChild(taskEl(ch, r, false)));
+  }
+
+  function renderSubjects() {
+    const g = $("subjectGrid"); g.innerHTML = "";
+    if (!state.subjects.length) g.innerHTML = `<div class="card empty" style="grid-column:1/-1">Ajoute ta première matière ci-dessus.</div>`;
+    // rangement par UE (une même matière peut être dans plusieurs UE), « Sans UE » à la fin
+    const ues = [...new Set(state.subjects.map(s => s.ue || ""))].sort((a, b) => (a === "") - (b === "") || (!/^UE/i.test(a)) - (!/^UE/i.test(b)) || a.localeCompare(b, "fr", { numeric: true }));
+    $("ueList").innerHTML = ues.filter(Boolean).map(u => `<option value="${esc(u)}"></option>`).join("");
+    const hasUe = ues.some(Boolean);
+    let lastUe = null;
+    ues.flatMap(u => state.subjects.filter(s => (s.ue || "") === u)).forEach(s => {
+      if ((s.ue || "") !== lastUe) {
+        lastUe = s.ue || "";
+        if (hasUe) { const t = document.createElement("h3"); t.className = "ue-title"; t.textContent = lastUe || "Sans UE"; g.appendChild(t); }
+      }
+      const chs = state.chapters.filter(c => c.subjectId === s.id);
+      const due = chs.filter(c => { const r = nextReview(c); return r && r.date <= TODAY; }).length;
+      const b = document.createElement("button");
+      b.className = "sub-card"; b.style.setProperty("--sub", s.color);
+      b.innerHTML = `<h3>${esc(s.name)}</h3><span class="small muted">${chs.length} chapitre${chs.length > 1 ? "s" : ""}</span>${due ? `<span class="pill">${due} à réviser aujourd'hui</span>` : ""}`;
+      b.onclick = () => { current.subjectId = s.id; show("subject"); };
+      g.appendChild(b);
+    });
+  }
+
+  function jPills(ch) {
+    return ch.reviews.map(r => {
+      const cls = r.done ? "ok" : (r.date < TODAY ? "late" : (r.date === TODAY ? "" : "todo"));
+      const label = r.done ? "✓" : (r.date === TODAY ? "aujourd'hui" : r.date < TODAY ? "en retard" : new Date(r.date + "T12:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" }));
+      return `<span class="pill ${cls}" title="${pretty(r.date)}">J${r.j} · ${label}</span>`;
+    }).join("");
+  }
+
+  function renderSubject() {
+    const s = state.subjects.find(x => x.id === current.subjectId);
+    if (!s) return show("subjects");
+    $("subjectTitle").textContent = s.name;
+    $("subjectUe").textContent = s.ue ? s.ue : "Sans UE";
+    if (document.activeElement !== $("editUe")) $("editUe").value = s.ue || "";
+    if (document.activeElement !== $("newChapter")) $("chapterAlert").hidden = true;
+    const list = $("chapterList"); list.innerHTML = "";
+    const chs = state.chapters.filter(c => c.subjectId === s.id);
+    if (!chs.length) list.innerHTML = `<div class="empty">Pas encore de chapitre. Ajoute ta première notion ci-dessus.</div>`;
+    chs.forEach(ch => {
+      const d = document.createElement("div"); d.className = "chapter";
+      d.innerHTML = `<div class="head"><h3>${esc(ch.title)}</h3><button class="btn">Ouvrir la fiche</button></div><div class="row">${jPills(ch)}</div>`;
+      d.querySelector("button").onclick = () => openFiche(ch.id, "subject");
+      list.appendChild(d);
+    });
+  }
+
+  function renderFiche() {
+    const ch = state.chapters.find(c => c.id === current.chapterId);
+    if (!ch) return show(current.from === "today" ? "today" : "subject");
+    current.subjectId = ch.subjectId;
+    $("ficheSubject").textContent = [subOf(ch).ue, subOf(ch).name].filter(Boolean).join(" · ");
+    $("ficheTitle").textContent = ch.title;
+    $("ficheJs").innerHTML = jPills(ch);
+    $("ficheText").value = ch.fiche || "";
+    $("confirmDelete").hidden = true;
+    $("pdfMsg").textContent = "";
+    renderLink(ch, false);
+    if (!quiz) renderCards(ch);
+  }
+
+  // ---------- Lien vers le cours (Drive, OneDrive, GoodNotes, Moodle…) ----------
+  const safeUrl = u => /^https?:\/\//i.test(u || "") ? u : "";
+  function renderLink(ch, editing) {
+    const url = safeUrl(ch.link);
+    const pdf = ch.pdf && ch.pdf.id;
+    // PDF du cours (choisi dans les dossiers) : prioritaire sur le lien
+    $("pdfView").hidden = !pdf;
+    if (pdf) { $("pdfName").textContent = ch.pdf.name || ""; }
+    $("pdfPick").hidden = !!pdf || !assetsApi;
+    $("pdfReplace").hidden = $("pdfRemove").hidden = !assetsApi;
+    $("linkLabel").textContent = assetsApi ? "ou colle un lien vers ton cours :" : "Lien vers ton cours :";
+    $("linkView").hidden = !!pdf || !url || editing;
+    $("linkForm").hidden = !!pdf || (!!url && !editing);
+    if (url) $("linkOpen").href = url;
+    if (document.activeElement !== $("linkInput")) $("linkInput").value = ch.link || "";
+    $("linkMsg").textContent = "";
+  }
+  const courseUrl = ch => (ch.pdf && ch.pdf.id) ? "/_blob/" + ch.pdf.id : safeUrl(ch.link);
+  // envoi du PDF dans l'espace de stockage du site
+  let assetsApi = null;
+  (async () => {
+    try { assetsApi = window.claude && await window.claude.use("assets"); } catch (e) { assetsApi = null; }
+    if (current.view === "fiche") renderLink(curCh(), false);
+  })();
+  const PDF_ERRORS = { too_large: "Ce PDF est trop lourd (20 Mo maximum).", unsupported_type: "Ce fichier n'est pas un PDF.", quota_exceeded: "L'espace de stockage est plein. Retire d'anciens PDF.", not_granted: "Tu n'as pas l'autorisation d'ajouter des fichiers ici." };
+  $("pdfBtn").onclick = () => $("pdfInput").click();
+  $("pdfReplace").onclick = () => $("pdfInput").click();
+  $("pdfInput").onchange = async () => {
+    const f = $("pdfInput").files[0]; $("pdfInput").value = "";
+    const ch = curCh(); if (!f || !ch || !assetsApi) return;
+    if (!/pdf$/i.test(f.type) && !/\.pdf$/i.test(f.name)) { $("pdfMsg").textContent = "Choisis un fichier PDF."; return; }
+    if (f.size > 20 * 1024 * 1024) { $("pdfMsg").textContent = PDF_ERRORS.too_large; return; }
+    $("pdfMsg").textContent = "Envoi du PDF…"; $("pdfBtn").disabled = true;
+    try {
+      const res = await assetsApi.upload(f, { type: "application/pdf" });
+      const old = ch.pdf && ch.pdf.id;
+      ch.pdf = { id: res.id, name: f.name, url: res.url }; pdfFiles[res.id] = f; save();
+      if (old && old !== res.id) assetsApi.delete(old).catch(() => {});
+      $("pdfMsg").textContent = "PDF ajouté.";
+    } catch (e) {
+      $("pdfMsg").textContent = PDF_ERRORS[e && e.code] || "L'envoi n'a pas marché. Réessaie.";
+    } finally { $("pdfBtn").disabled = false; renderLink(ch, false); }
+  };
+  $("pdfRemove").onclick = () => {
+    const ch = curCh(); if (!ch || !ch.pdf) return;
+    const id = ch.pdf.id; delete ch.pdf; save();
+    if (assetsApi && id) assetsApi.delete(id).catch(() => {});
+    $("pdfMsg").textContent = "PDF retiré."; renderLink(ch, false);
+  };
+  $("linkEdit").onclick = () => { renderLink(curCh(), true); $("linkInput").focus(); };
+  $("linkForm").onsubmit = e => {
+    e.preventDefault();
+    const ch = curCh(); if (!ch) return;
+    let v = $("linkInput").value.trim();
+    if (v && !/^https?:\/\//i.test(v)) v = "https://" + v;
+    if (v && !safeUrl(v)) { $("linkMsg").textContent = "Ce lien ne commence pas par https://"; return; }
+    ch.link = v; save(); $("linkInput").blur(); renderLink(ch, false);
+  };
+
+  // ---------- Flashcards ----------
+  let quiz = null; // { cards, i, shown, ok }
+  function renderCards(ch) {
+    const cards = ch.cards || [];
+    $("quiz").hidden = true; $("cardsEdit").hidden = false;
+    $("startQuiz").hidden = !cards.length;
+    $("startQuiz").textContent = `Réviser mes cartes (${cards.length})`;
+    const list = $("cardList"); list.innerHTML = "";
+    if (!cards.length) list.innerHTML = `<div class="muted small">Pas encore de carte pour ce chapitre. Écris-en une ci-dessous${aiReady ? " ou génère-les avec l'IA" : ""}.</div>`;
+    cards.forEach(c => {
+      const d = document.createElement("div"); d.className = "fcard";
+      d.innerHTML = `<div class="q"></div><button class="x" aria-label="Supprimer la carte">✕</button><div class="a"></div>`;
+      d.querySelector(".q").textContent = c.q; d.querySelector(".a").textContent = c.a;
+      if (c.ai) { const t = document.createElement("span"); t.className = "pill"; t.style.marginLeft = "6px"; t.textContent = "IA"; d.querySelector(".q").appendChild(t); }
+      d.querySelector(".x").onclick = () => { ch.cards = ch.cards.filter(x => x !== c); save(); renderCards(ch); };
+      list.appendChild(d);
+    });
+  }
+  const curCh = () => state.chapters.find(c => c.id === current.chapterId);
+  $("addCardForm").onsubmit = e => {
+    e.preventDefault();
+    const ch = curCh(); if (!ch) return;
+    const q = $("newQ").value.trim(), a = $("newA").value.trim(); if (!q || !a) return;
+    (ch.cards = ch.cards || []).push({ id: uid(), q, a });
+    $("newQ").value = ""; $("newA").value = ""; $("newQ").focus(); save(); renderCards(ch);
+  };
+  function showQuiz() {
+    const c = quiz.cards[quiz.i];
+    $("quiz").hidden = false; $("cardsEdit").hidden = true; $("startQuiz").hidden = true;
+    const btns = $("quizBtns"); btns.innerHTML = "";
+    if (!c) {
+      $("quizProgress").textContent = "Terminé";
+      $("quizQ").textContent = `Tu savais ${quiz.ok} carte${quiz.ok > 1 ? "s" : ""} sur ${quiz.total} du premier coup.`;
+      $("quizA").hidden = true;
+      const again = document.createElement("button"); again.className = "btn"; again.textContent = "Recommencer";
+      again.onclick = () => startQuiz();
+      const end = document.createElement("button"); end.className = "btn primary"; end.textContent = "Fermer";
+      end.onclick = () => { quiz = null; renderCards(curCh()); };
+      btns.append(again, end); return;
+    }
+    $("quizProgress").textContent = `Carte ${quiz.i + 1} sur ${quiz.cards.length}` + (quiz.cards.length > quiz.total ? " (avec les cartes à revoir)" : "");
+    $("quizQ").textContent = c.q;
+    $("quizA").textContent = c.a; $("quizA").hidden = !quiz.shown;
+    const mk = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.textContent = label; b.onclick = fn; btns.appendChild(b); };
+    if (!quiz.shown) mk("Voir la réponse", "primary", () => { quiz.shown = true; showQuiz(); });
+    else {
+      mk("À revoir", "", () => { quiz.missed.add(c.id); quiz.cards.push(c); quiz.i++; quiz.shown = false; showQuiz(); });
+      mk("Je savais ✓", "primary", () => { if (!quiz.missed.has(c.id)) quiz.ok++; quiz.i++; quiz.shown = false; showQuiz(); });
+    }
+    mk("Arrêter", "ghost", () => { quiz = null; renderCards(curCh()); });
+  }
+  function startQuiz() {
+    const ch = curCh(); if (!ch || !(ch.cards || []).length) return;
+    // les cartes dans un ordre mélangé ; « À revoir » remet la carte à la fin du paquet
+    const cards = ch.cards.slice().sort(() => Math.random() - 0.5);
+    quiz = { cards, i: 0, shown: false, ok: 0, total: cards.length, missed: new Set() };
+    showQuiz();
+  }
+  $("startQuiz").onclick = startQuiz;
+
+  // Génération par l'IA (Claude, via le compte Claude de la personne qui utilise le site)
+  let aiReady = false, sampleFn = null, aiCtl = null;
+  (async () => {
+    try { sampleFn = window.claude && await window.claude.use("sample"); } catch (e) { sampleFn = null; }
+    aiReady = !!sampleFn; $("aiRow").hidden = !aiReady;
+    if (aiReady && current.view === "fiche" && !quiz) renderCards(curCh());
+  })();
+  const AI_ERRORS = { rate_limited: "Trop de demandes d'un coup. Réessaie dans un moment.", aborted: "Génération arrêtée." };
+  $("aiStop").onclick = () => aiCtl && aiCtl.abort();
+  // ---------- Lecture du PDF du cours (pdf.js) : texte complet + passages surlignés ----------
+  const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  const pdfFiles = {};   // fichiers choisis pendant cette visite (id -> File)
+  const pdfCache = {};   // texte déjà extrait (id -> {hl, full, pages})
+  function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej({ code: "pdfjs_load" }); document.head.appendChild(s); }); }
+  async function loadPdfJs() {
+    if (!window.pdfjsLib) await loadScript(PDFJS + "pdf.min.js");
+    if (!window.pdfjsWorker) await loadScript(PDFJS + "pdf.worker.min.js"); // le lecteur tourne dans la page
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js";
+    return window.pdfjsLib;
+  }
+  // un pixel « surligné » : couleur vive et claire (jaune, orange, rose, rouge, vert, bleu clair)
+  const isHl = (r, g, b) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return mx > 170 && mx - mn > 70; };
+  async function extractPdf(ch, onProgress) {
+    const id = ch.pdf.id;
+    if (pdfCache[id]) return pdfCache[id];
+    const lib = await loadPdfJs();
+    const pdf = await getPdfDoc(id, ch.pdf.url);
+    const hl = [], full = [];
+    const canvas = document.createElement("canvas"), ctx = canvas.getContext("2d", { willReadFrequently: true });
+    for (let i = 1; i <= pdf.numPages; i++) {
+      onProgress && onProgress(i, pdf.numPages);
+      const page = await pdf.getPage(i);
+      const vp = page.getViewport({ scale: 1 });
+      canvas.width = Math.ceil(vp.width); canvas.height = Math.ceil(vp.height);
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data, W = canvas.width, H = canvas.height;
+      const tc = await page.getTextContent();
+      let pageFull = "", pageHl = "", inHl = false;
+      tc.items.forEach(it => {
+        if (typeof it.str !== "string") return;
+        pageFull += it.str + (it.hasEOL ? "\n" : "");
+        if (!it.str.trim()) { if (inHl) pageHl += " "; return; }
+        const t = lib.Util.transform(vp.transform, it.transform);
+        const hgt = Math.hypot(t[2], t[3]) || 10;
+        const x0 = Math.max(0, Math.floor(t[4])), x1 = Math.min(W - 1, Math.ceil(t[4] + it.width * vp.scale));
+        const y0 = Math.max(0, Math.floor(t[5] - hgt)), y1 = Math.min(H - 1, Math.ceil(t[5] + hgt * 0.15));
+        let n = 0, k = 0;
+        for (let y = y0; y <= y1; y += 2) for (let x = x0; x <= x1; x += 2) { const o = (y * W + x) * 4; n++; if (isHl(px[o], px[o + 1], px[o + 2])) k++; }
+        const lit = n > 0 && k / n > 0.3;
+        if (lit) { pageHl += (inHl ? "" : (pageHl ? "\n• " : "• ")) + it.str + (it.hasEOL ? " " : ""); inHl = true; }
+        else inHl = false;
+      });
+      full.push(pageFull.replace(/[ \t]+/g, " ").trim());
+      if (pageHl.trim()) hl.push(pageHl.replace(/[ \t]+/g, " ").trim());
+    }
+    pdfCache[id] = { hl: hl.join("\n"), full: full.join("\n\n"), pages: pdf.numPages };
+    return pdfCache[id];
+  }
+
+  // ---------- Lecteur de PDF intégré (le cours s'ouvre dans Mémoria) ----------
+  const pdfDocs = {};
+  async function fetchPdf(id, url) {
+    for (const u of [url, "/_blob/" + id].filter(Boolean)) {
+      try { const r = await fetch(u, { credentials: "include" }); if (r.ok) return await r.arrayBuffer(); } catch (e) {}
+    }
+    throw { code: "pdf_fetch" };
+  }
+  async function getPdfDoc(id, url) {
+    if (pdfDocs[id]) return pdfDocs[id];
+    const lib = await loadPdfJs();
+    const data = pdfFiles[id] ? await pdfFiles[id].arrayBuffer() : await fetchPdf(id, url);
+    pdfDocs[id] = await lib.getDocument({ data }).promise;
+    return pdfDocs[id];
+  }
+  let viewerZoom = 1, viewerDoc = null, viewerObs = null, viewerToken = 0;
+  async function renderViewer() {
+    const box = $("viewerPages"); box.innerHTML = "";
+    if (viewerObs) viewerObs.disconnect();
+    const doc = viewerDoc; if (!doc) return;
+    const token = ++viewerToken;
+    const avail = Math.max(280, box.clientWidth - 32);
+    const first = await doc.getPage(1);
+    const base = first.getViewport({ scale: 1 });
+    const scale = Math.min(avail / base.width, 2) * viewerZoom;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    viewerObs = new IntersectionObserver(entries => entries.forEach(en => {
+      if (!en.isIntersecting || en.target.dataset.done) return;
+      en.target.dataset.done = "1";
+      const n = Number(en.target.dataset.page);
+      doc.getPage(n).then(pg => {
+        if (token !== viewerToken) return;
+        const vp = pg.getViewport({ scale: scale * dpr });
+        const c = en.target; c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+        return pg.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+      }).catch(() => {});
+    }), { root: box, rootMargin: "800px 0px" });
+    for (let i = 1; i <= doc.numPages; i++) {
+      const c = document.createElement("canvas");
+      c.dataset.page = i;
+      c.style.width = Math.floor(base.width * scale) + "px"; c.style.height = Math.floor(base.height * scale) + "px";
+      c.setAttribute("aria-label", "Page " + i);
+      box.appendChild(c); viewerObs.observe(c);
+    }
+  }
+  async function openViewer(ch) {
+    if (!ch || !ch.pdf) return;
+    $("viewer").hidden = false; document.body.style.overflow = "hidden";
+    $("viewerTitle").textContent = ch.pdf.name || ch.title;
+    $("viewerPages").innerHTML = `<div class="vmsg">Ouverture du cours…</div>`;
+    viewerZoom = 1;
+    try { viewerDoc = await getPdfDoc(ch.pdf.id, ch.pdf.url); await renderViewer(); }
+    catch (e) { viewerDoc = null; $("viewerPages").innerHTML = `<div class="vmsg">Impossible d'ouvrir ce PDF ici. Essaie de le remplacer en le choisissant à nouveau dans tes dossiers.</div>`; }
+  }
+  function closeViewer() { $("viewer").hidden = true; document.body.style.overflow = ""; if (viewerObs) viewerObs.disconnect(); viewerToken++; $("viewerPages").innerHTML = ""; }
+  $("viewerClose").onclick = closeViewer;
+  $("zoomIn").onclick = () => { viewerZoom = Math.min(viewerZoom * 1.25, 3); renderViewer(); };
+  $("zoomOut").onclick = () => { viewerZoom = Math.max(viewerZoom / 1.25, 0.5); renderViewer(); };
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("viewer").hidden) closeViewer(); });
+  $("pdfOpen").onclick = () => openViewer(curCh());
+
+  $("aiGen").onclick = async () => {
+    const ch = curCh(); if (!ch || !sampleFn) return;
+    const fiche = (ch.fiche || "").trim();
+    const hasPdf = !!(ch.pdf && ch.pdf.id);
+    if (!hasPdf && fiche.length < 20) { $("aiMsg").textContent = "Ajoute le PDF de ton cours ou écris ta fiche : Claude s'en sert pour créer les cartes."; return; }
+    $("aiGen").disabled = true; $("aiStop").hidden = false;
+    aiCtl = new AbortController();
+    try {
+      let course = null;
+      if (hasPdf) {
+        $("aiMsg").textContent = "Lecture du PDF…";
+        try { course = await extractPdf(ch, (i, n) => { $("aiMsg").textContent = `Lecture du PDF : page ${i} sur ${n}…`; }); }
+        catch (e) { course = null; if (fiche.length < 20) throw { code: "pdf_read" }; }
+      }
+      if (aiCtl.signal.aborted) throw { code: "aborted" };
+      $("aiMsg").textContent = "Claude analyse ton cours…";
+      // on garde de la place sous la limite de taille : surlignés d'abord, puis le cours complet
+      const hlText = course ? course.hl.slice(0, 60000) : "";
+      const fullText = course ? course.full.slice(0, 150000 - hlText.length) : "";
+      const prompt = `Tu aides un étudiant à réviser avec des flashcards.
+${course ? `Il t'envoie le texte de son cours (PDF), et à part les passages qu'il a SURLIGNÉS : ce sont les points qu'il juge importants, base-toi d'abord sur eux.` : ""}
+${fiche.length >= 20 ? "Il t'envoie aussi sa fiche de révision." : ""}
+Analyse d'abord le contenu : repère les notions importantes (définitions, mécanismes, chiffres et valeurs, classifications, liens de cause à effet, pièges classiques).
+Puis crée entre 8 et 15 flashcards en français qui couvrent ces notions, des plus importantes aux plus secondaires${course && hlText ? ", en priorité les passages surlignés" : ""}.
+Règles : une seule notion par carte, question courte et précise, réponse courte (1 à 3 lignes), uniquement à partir du contenu fourni, sans rien inventer, sans doublon avec les cartes déjà existantes. Ignore les sommaires, en-têtes de page, noms d'étudiants et QCM d'annales recopiés.
+Réponds UNIQUEMENT avec un tableau JSON de la forme [{"q": "question", "a": "réponse"}].
+
+Matière : ${subOf(ch).name}
+Chapitre : ${ch.title}
+Cartes déjà existantes : ${(ch.cards || []).map(c => c.q).join(" | ").slice(0, 3000) || "aucune"}
+${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""}${fullText ? `\nTexte complet du cours :\n"""\n${fullText}\n"""\n` : ""}${fiche.length >= 20 ? `\nFiche de l'étudiant :\n"""\n${fiche.slice(0, 12000)}\n"""` : ""}`;
+      const out = await sampleFn.json(prompt, { signal: aiCtl.signal, onText: () => { $("aiMsg").textContent = "Claude écrit les cartes…"; } });
+      const arr = Array.isArray(out) ? out : (out && Array.isArray(out.cards) ? out.cards : []);
+      const fresh = arr.filter(c => c && typeof c.q === "string" && typeof c.a === "string" && c.q.trim() && c.a.trim())
+        .slice(0, 20).map(c => ({ id: uid(), q: c.q.trim().slice(0, 300), a: c.a.trim().slice(0, 600), ai: true }));
+      if (!fresh.length) throw { code: "empty" };
+      (ch.cards = ch.cards || []).push(...fresh); save();
+      $("aiMsg").textContent = `${fresh.length} cartes ajoutées${course ? ` à partir de ton PDF (${course.pages} pages${course.hl ? ", surlignages compris" : ""})` : ""}. Supprime celles qui ne te plaisent pas avec ✕.`;
+      renderCards(ch);
+    } catch (e) {
+      const code = e && e.code;
+      if (code === "not_granted") { $("aiMsg").textContent = "Tu n'as pas autorisé Claude, donc la génération est désactivée. Tu peux toujours écrire tes cartes à la main."; $("aiGen").hidden = true; }
+      else if (code === "pdf_read" || code === "pdfjs_load" || code === "pdf_fetch") $("aiMsg").textContent = "Je n'ai pas réussi à lire ton PDF. Vérifie qu'il s'ouvre bien, ou écris ta fiche et réessaie.";
+      else $("aiMsg").textContent = AI_ERRORS[code] || "Claude n'a pas réussi à créer les cartes cette fois. Réessaie, ou écris-les à la main.";
+    } finally {
+      $("aiGen").disabled = false; $("aiStop").hidden = true; aiCtl = null;
+    }
+  };
+
+  // ---------- Calendrier ----------
+  let calMonth = TODAY.slice(0, 7), calSel = TODAY;
+  function dayInfo(d) {
+    const todo = d < TODAY ? [] : itemsOn(d);
+    const done = [], missed = [];
+    state.chapters.forEach(ch => ch.reviews.forEach(r => {
+      if (r.date !== d) return;
+      if (r.done) done.push([ch, r]); else if (d < TODAY) missed.push([ch, r]);
+    }));
+    return { todo, done, missed };
+  }
+  function renderCalendar() {
+    const [y, m] = calMonth.split("-").map(Number);
+    $("calTitle").textContent = new Date(y, m - 1, 1).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+    const g = $("calGrid"); g.innerHTML = "";
+    ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"].forEach(d => { const e = document.createElement("div"); e.className = "cal-dow"; e.textContent = d; g.appendChild(e); });
+    const first = new Date(y, m - 1, 1);
+    const startIso = addDays(iso(first), -((first.getDay() + 6) % 7));
+    for (let i = 0; i < 42; i++) {
+      const d = addDays(startIso, i);
+      if (i === 35 && d.slice(0, 7) !== calMonth) break;
+      const info = dayInfo(d);
+      const n = info.todo.length + (d < TODAY ? info.missed.length : 0);
+      const b = document.createElement("button");
+      b.className = "cal-day" + (d.slice(0, 7) !== calMonth ? " out" : "") + (d === TODAY ? " today" : "") + (state.maxPerDay && d >= TODAY && info.todo.length > state.maxPerDay ? " heavy" : "");
+      b.setAttribute("aria-pressed", d === calSel);
+      b.setAttribute("aria-label", pretty(d));
+      const subs = [...new Set(info.todo.concat(info.missed).map(([ch]) => subOf(ch).color))].slice(0, 5);
+      b.innerHTML = `<span class="num">${Number(d.slice(8))}</span>
+        <span>${n ? `<span class="n">${n}</span>` : ""}${info.done.length ? ` <span class="ok">✓${info.done.length}</span>` : ""}</span>
+        <span class="dots">${subs.map(c => `<i style="--c:${c}"></i>`).join("")}</span>`;
+      b.onclick = () => { calSel = d; renderCalendar(); };
+      g.appendChild(b);
+    }
+    const info = dayInfo(calSel);
+    $("calDayTitle").textContent = pretty(calSel).replace(/^./, c => c.toUpperCase()) + (state.maxPerDay && calSel >= TODAY ? ` · ${info.todo.length}/${state.maxPerDay}` : "");
+    const list = $("calDayList"); list.innerHTML = "";
+    const all = info.todo.concat(info.missed).sort(priority).concat(info.done);
+    if (!all.length) list.innerHTML = `<div class="muted small">Aucune révision ce jour-là.</div>`;
+    all.forEach(([ch, r]) => list.appendChild(taskEl(ch, r, !r.done && calSel <= TODAY)));
+  }
+  $("calPrev").onclick = () => { const [y, m] = calMonth.split("-").map(Number); calMonth = iso(new Date(y, m - 2, 1)).slice(0, 7); renderCalendar(); };
+  $("calNext").onclick = () => { const [y, m] = calMonth.split("-").map(Number); calMonth = iso(new Date(y, m, 1)).slice(0, 7); renderCalendar(); };
+
+  function renderSettings() {
+    if (document.activeElement !== $("maxInput")) $("maxInput").value = state.maxPerDay || 6;
+    const c = $("jChips"); c.innerHTML = "";
+    myJs().forEach(j => {
+      const chip = document.createElement("span"); chip.className = "jchip";
+      chip.innerHTML = `J${j}<button type="button" aria-label="Retirer J${j}">✕</button>`;
+      chip.querySelector("button").onclick = () => {
+        if (myJs().length <= 1) return;
+        state.jList = myJs().filter(x => x !== j); save(); render();
+      };
+      c.appendChild(chip);
+    });
+  }
+
+  function render() {
+    applyAccent();
+    if (current.view === "today") renderToday();
+    if (current.view === "subjects") renderSubjects();
+    if (current.view === "subject") renderSubject();
+    if (current.view === "fiche") renderFiche();
+    if (current.view === "settings") renderSettings();
+    if (current.view === "calendar") renderCalendar();
+    $("jHint").textContent = "Quand tu ajoutes un chapitre, Mémoria planifie tes révisions à " + myJs().map(j => "J" + j).join(", ") + ". Tu peux changer tes J dans Réglages.";
+  }
+
+  // ---------- Actions ----------
+  $("addSubjectForm").onsubmit = e => {
+    e.preventDefault();
+    const name = $("newSubject").value.trim(); if (!name) return;
+    const ue = $("newUe").value.trim();
+    if (state.subjects.some(s => s.name.toLowerCase() === name.toLowerCase() && (s.ue || "") === ue)) { $("newSubject").setCustomValidity(ue ? "Cette matière existe déjà dans cette UE" : "Cette matière existe déjà"); $("newSubject").reportValidity(); return; }
+    state.subjects.push({ id: uid(), ue, name, color: newSubColor });
+    $("newSubject").value = ""; save(); render();
+  };
+  $("editUeForm").onsubmit = e => {
+    e.preventDefault();
+    const s = state.subjects.find(x => x.id === current.subjectId); if (!s) return;
+    s.ue = $("editUe").value.trim(); $("editUe").blur(); save(); render();
+  };
+  $("newSubject").oninput = $("newUe").oninput = () => $("newSubject").setCustomValidity("");
+  $("addChapterForm").onsubmit = e => {
+    e.preventDefault();
+    const title = $("newChapter").value.trim(); if (!title) return;
+    const ch = { id: uid(), subjectId: current.subjectId, title, start: TODAY, fiche: "", reviews: makeReviews(TODAY) };
+    state.chapters.push(ch);
+    $("newChapter").value = ""; lastSmooth = null; save(); render();
+    // alerte si ce nouveau chapitre fait dépasser le max certains jours
+    const heavy = state.maxPerDay ? ch.reviews.map(r => [r.date, itemsOn(r.date).length]).filter(([, n]) => n > state.maxPerDay) : [];
+    const ca = $("chapterAlert");
+    ca.hidden = !heavy.length;
+    if (heavy.length) ca.innerHTML = `<span><strong>Attention :</strong> avec ce chapitre, tu dépasses ton maximum de ${state.maxPerDay} révisions le ${heavy.map(([d, n]) => `${shortDay(d)} (${n})`).join(", ")}. Va dans « Aujourd'hui » pour lisser.</span>`;
+  };
+  let saveTimer;
+  $("ficheText").oninput = () => {
+    const ch = state.chapters.find(c => c.id === current.chapterId); if (!ch) return;
+    ch.fiche = $("ficheText").value; save();
+    $("savedMsg").hidden = false; clearTimeout(saveTimer); saveTimer = setTimeout(() => $("savedMsg").hidden = true, 1200);
+  };
+  $("deleteChapter").onclick = () => $("confirmDelete").hidden = false;
+  $("cancelDelete").onclick = () => $("confirmDelete").hidden = true;
+  $("okDelete").onclick = () => {
+    state.chapters = state.chapters.filter(c => c.id !== current.chapterId); save();
+    show(current.from === "today" ? "today" : "subject");
+  };
+  $("addJForm").onsubmit = e => {
+    e.preventDefault();
+    const j = Math.round(Number($("newJ").value));
+    if (!(j >= 0 && j <= 365)) return;
+    state.jList = [...new Set([...myJs(), j])].sort((a, b) => a - b);
+    $("newJ").value = ""; save(); render();
+  };
+  function setMax(v) { const n = Math.round(Number(v)); if (n >= 1 && n <= 50) { state.maxPerDay = n; lastSmooth = null; save(); render(); return true; } return false; }
+  $("maxSetupForm").onsubmit = e => { e.preventDefault(); setMax($("maxSetupInput").value); };
+  $("maxForm").onsubmit = e => { e.preventDefault(); if (setMax($("maxInput").value)) { $("maxSaved").hidden = false; setTimeout(() => $("maxSaved").hidden = true, 1200); } };
+  $("resetJ").onclick = () => { state.jList = J_DEFAUT.slice(); save(); render(); };
+  // repartir de zéro : 2 validations + le mot EFFACER à taper
+  function resetClear() { $("confirmClear").hidden = true; $("confirmClear2").hidden = true; $("clearWord").value = ""; $("okClear").disabled = true; }
+  $("clearAll").onclick = () => { resetClear(); $("confirmClear").hidden = false; };
+  $("cancelClear").onclick = resetClear;
+  $("cancelClear2").onclick = resetClear;
+  $("nextClear").onclick = () => { $("confirmClear").hidden = true; $("confirmClear2").hidden = false; $("clearWord").focus(); };
+  $("clearWord").oninput = () => { $("okClear").disabled = $("clearWord").value.trim() !== "EFFACER"; };
+  $("okClear").onclick = () => {
+    if ($("clearWord").value.trim() !== "EFFACER") return;
+    resetClear(); state = { accent: state.accent, jList: state.jList, maxPerDay: state.maxPerDay, example: false, dataVersion: 7, subjects: [], chapters: [] }; lastSmooth = null; save(); show("subjects"); };
+
+  show("today");
+  if (!state.seenIntro) showIntro(true);
+})();
+</script>
+
+</body>
+</html>
