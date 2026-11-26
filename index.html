@@ -175,7 +175,7 @@ button.btn:hover { filter: brightness(0.97); }
 button.btn:disabled { opacity: 0.45; cursor: not-allowed; }
 button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-input[type="text"], textarea { width: 100%; font: 400 0.95rem var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+input[type="text"], input[type="email"], input[type="password"], textarea { width: 100%; font: 400 0.95rem var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
 .row input[type="text"] { flex: 1 1 180px; width: auto; }
 textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
 .grid-sub { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
@@ -203,7 +203,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     <div class="intro-brand">Mémoria<span>.</span></div>
     <h1 class="intro-title">Révise au bon moment,<br>retiens pour de bon.</h1>
     <p class="intro-lead">Mémoria organise tes révisions avec la <strong>méthode des J</strong> : tu revois chaque chapitre juste avant de l'oublier. Le site te dit chaque jour quoi réviser.</p>
-    <div class="row"><button class="btn primary big" id="introStart">Commencer, c'est gratuit</button></div>
+    <div class="row"><button class="btn primary big" id="introStart">Commencer, c'est gratuit</button><button class="btn big" id="introLogin">J'ai déjà un compte</button></div>
 
     <figure class="jline" aria-label="Exemple : un chapitre est révisé à J0, J3, J7, J14 et J30">
       <div class="jrow">
@@ -296,6 +296,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       <button class="item" id="tab-subjects">Matières</button>
       <button class="item" id="tab-calendar">Calendrier</button>
       <button class="item" id="tab-settings">Réglages</button>
+      <button class="item" id="tab-account">Mon compte</button>
       <button class="item" id="tab-intro">Présentation</button>
       <div class="menu-colors"><span>Couleur</span><div class="swatches" id="accentPicker" aria-label="Couleur du site"></div></div>
     </nav>
@@ -415,7 +416,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     </div>
     <div class="card">
       <h2>Repartir de zéro</h2>
-      <p class="small muted" style="margin:0">Efface toutes tes matières, chapitres, fiches et révisions de cet appareil. Tes réglages sont gardés.</p>
+      <p class="small muted" style="margin:0">Efface toutes tes matières, chapitres, fiches, révisions et PDF (aussi sur ton compte si tu es connecté). Tes réglages sont gardés.</p>
       <div class="row"><button class="btn ghost" id="clearAll">Tout effacer</button></div>
       <div class="banner" id="confirmClear" hidden>
         <span><strong>Étape 1 sur 2.</strong> Tu vas effacer toutes tes matières, chapitres, fiches et révisions. Ça ne peut pas être annulé. Tu es sûr ?</span>
@@ -427,6 +428,44 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
         <span class="row"><button class="btn ghost" id="cancelClear2">Non, garder</button><button class="btn primary" id="okClear" disabled>Tout effacer définitivement</button></span>
       </div>
     </div>
+  </section>
+
+  <!-- MON COMPTE -->
+  <section id="view-account" class="wrap" style="gap:16px;width:100%" hidden>
+    <div class="alert" id="accConflict" hidden>
+      <span><strong>Ton compte a déjà des matières enregistrées, et cet appareil aussi.</strong> Lesquelles veux-tu garder ?</span>
+      <span class="row"><button class="btn primary" id="accKeepCloud">Celles de mon compte</button><button class="btn ghost" id="accKeepLocal">Celles de cet appareil</button></span>
+      <span class="small">« Celles de cet appareil » remplace ce qui est enregistré sur ton compte.</span>
+    </div>
+    <div class="card" id="accOut">
+      <h2>Mon compte</h2>
+      <p class="small muted" style="margin:0">Avec un compte gratuit, tes matières, fiches et révisions sont enregistrées en ligne : tu les retrouves sur ton téléphone et sur ton ordi. Tu peux aussi joindre le PDF de tes cours.</p>
+      <form id="accForm" style="display:grid;gap:8px">
+        <label for="accEmail" class="small muted">Adresse mail</label>
+        <input type="email" id="accEmail" autocomplete="email" required>
+        <label for="accPass" class="small muted">Mot de passe (6 caractères minimum)</label>
+        <input type="password" id="accPass" autocomplete="current-password" minlength="6" required>
+        <div class="row"><button class="btn primary" id="accLogin" type="submit">Se connecter</button><button class="btn" id="accSignup" type="button">Créer mon compte</button></div>
+        <div class="row"><button class="btn ghost small" id="accForgot" type="button">Mot de passe oublié ?</button></div>
+      </form>
+      <span class="small" id="accMsg" role="status"></span>
+    </div>
+    <div class="card" id="accNewPass" hidden>
+      <h2>Choisis un nouveau mot de passe</h2>
+      <form class="row" id="accNewPassForm">
+        <input type="password" id="accNewPassInput" minlength="6" autocomplete="new-password" required aria-label="Nouveau mot de passe" style="flex:1 1 180px;width:auto">
+        <button class="btn primary" type="submit">Enregistrer</button>
+      </form>
+      <span class="small" id="accNewPassMsg" role="status"></span>
+    </div>
+    <div class="card" id="accIn" hidden>
+      <h2>Mon compte</h2>
+      <p style="margin:0">Connecté avec <strong id="accWho"></strong></p>
+      <p class="small muted" id="accSync" style="margin:0" role="status"></p>
+      <div class="row"><button class="btn ghost" id="accLogout">Se déconnecter</button></div>
+      <span class="small" id="accOutMsg" role="status"></span>
+    </div>
+    <p class="small muted" id="accOff" hidden>La connexion aux comptes n'est pas disponible pour l'instant. Vérifie ta connexion internet, puis recharge la page.</p>
   </section>
 
   <!-- UNE FICHE -->
@@ -447,6 +486,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
           <button class="btn primary" id="pdfBtn" type="button">📎 Choisir le PDF du cours</button>
           <input type="file" id="pdfInput" accept="application/pdf,.pdf" hidden>
         </div>
+        <span class="small muted" id="pdfLoginHint" hidden>Pour joindre le PDF de ton cours, connecte-toi : menu ☰ › Mon compte.</span>
         <span class="small" id="pdfMsg"></span>
         <div class="row" id="linkView" hidden>
           <a class="btn primary" id="linkOpen" target="_blank" rel="noopener noreferrer">📄 Ouvrir mon cours</a>
@@ -501,7 +541,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     </div>
   </section>
 
-  <p class="small muted" style="text-align:center">Tes révisions sont gardées dans ce navigateur, sur cet appareil.</p>
+  <p class="small muted" style="text-align:center" id="footNote">Tes révisions sont gardées dans ce navigateur, sur cet appareil. Crée un compte (menu ☰ › Mon compte) pour les retrouver partout.</p>
 </div>
 
 <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-labelledby="viewerTitle">
@@ -516,6 +556,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   <div class="viewer-pages" id="viewerPages"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js"></script>
 <script>
 (function () {
   // ---------- Réglages ----------
@@ -547,7 +588,17 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   // on charge le tableau de Malo une fois (même si le navigateur avait gardé une ancienne version de test), en gardant ses réglages
   // site vierge : chaque étudiant commence avec ses propres matières
   if (!state || !Array.isArray(state.subjects) || !Array.isArray(state.chapters)) state = { accent: (state && state.accent) || "Lavande", example: false, dataVersion: 7, subjects: [], chapters: [] };
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  // ---------- Compte en ligne (Supabase) : les données suivent l'étudiant sur tous ses appareils ----------
+  const SB_URL = "https://djlmtvtynxwffcrgwkzw.supabase.co";
+  const SB_KEY = "sb_publishable_LtL35C9ta4X_FELWYKPTAw_2HYTZHnm"; // clé publique (faite pour être dans le site)
+  const LOCAL_ONLY = ["ownerId", "cloudAt", "dirty"];
+  let sb = null, sbUser = null, pushTimer = null, pendingCloud = null, recovering = false;
+  try { if (window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) { sb = null; }
+  function localSave() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function save() {
+    if (state.ownerId) { state.dirty = true; if (sbUser && state.ownerId === sbUser.id) schedulePush(); }
+    localSave();
+  }
   save();
 
   // ---------- Couleur du site ----------
@@ -577,10 +628,10 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   let current = { view: "today", subjectId: null, chapterId: null, from: "today" };
   function show(view) {
     current.view = view;
-    ["today", "subjects", "subject", "fiche", "settings", "calendar"].forEach(v => $("view-" + v).hidden = v !== view);
+    ["today", "subjects", "subject", "fiche", "settings", "calendar", "account"].forEach(v => $("view-" + v).hidden = v !== view);
     const section = view === "fiche" ? current.from : view === "subject" ? "subjects" : view;
-    const names = { today: "Aujourd'hui", subjects: "Matières", subject: "Matières", calendar: "Calendrier", settings: "Réglages" };
-    ["today", "subjects", "calendar", "settings"].forEach(v => $("tab-" + v).setAttribute("aria-current", v === section ? "page" : "false"));
+    const names = { today: "Aujourd'hui", subjects: "Matières", subject: "Matières", calendar: "Calendrier", settings: "Réglages", account: "Mon compte" };
+    ["today", "subjects", "calendar", "settings", "account"].forEach(v => $("tab-" + v).setAttribute("aria-current", v === section ? "page" : "false"));
     $("pageName").textContent = names[section] || "";
     render();
     window.scrollTo(0, 0);
@@ -589,6 +640,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   $("tab-subjects").onclick = () => show("subjects");
   $("tab-settings").onclick = () => show("settings");
   $("tab-calendar").onclick = () => show("calendar");
+  $("tab-account").onclick = () => show("account");
   $("welcomeGo").onclick = () => show("subjects");
   // page de présentation : affichée à la première visite, puis depuis le menu
   function showIntro(on) { $("intro").hidden = !on; $("app").hidden = on; window.scrollTo(0, 0); }
@@ -657,6 +709,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     save(); setupStep++; renderSetup();
   };
   $("introStart").onclick = startApp; $("introStart2").onclick = startApp;
+  $("introLogin").onclick = () => { state.seenIntro = true; save(); showIntro(false); show("account"); $("accEmail").focus(); };
   $("tab-intro").onclick = () => showIntro(true);
   // menu déroulant (les 3 barres)
   function setMenu(open) { $("mainMenu").hidden = !open; $("menuBtn").setAttribute("aria-expanded", open); }
@@ -733,7 +786,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     el.innerHTML = `<div style="min-width:0"><div class="meta"><span>${esc(sub.name)}${sub.ue ? " · " + esc(sub.ue.split(" ")[0]) : ""}</span><span class="pill">J${r.j}</span>${imp}${when}</div>
       <div class="title">${esc(ch.title)}</div></div>`;
     el.querySelector(".title").onclick = () => openFiche(ch.id, current.view === "calendar" ? "calendar" : "today");
-    if (ch.pdf && ch.pdf.id) {
+    if (pdfKey(ch)) {
       const a = document.createElement("a"); a.href = "#"; a.textContent = "📄 Cours";
       a.onclick = e => { e.preventDefault(); openViewer(ch); };
       el.querySelector(".meta").appendChild(a);
@@ -874,20 +927,20 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   const safeUrl = u => /^https?:\/\//i.test(u || "") ? u : "";
   function renderLink(ch, editing) {
     const url = safeUrl(ch.link);
-    const pdf = ch.pdf && ch.pdf.id;
+    const pdf = pdfKey(ch), ready = pdfStoreReady();
     // PDF du cours (choisi dans les dossiers) : prioritaire sur le lien
     $("pdfView").hidden = !pdf;
     if (pdf) { $("pdfName").textContent = ch.pdf.name || ""; }
-    $("pdfPick").hidden = !!pdf || !assetsApi;
-    $("pdfReplace").hidden = $("pdfRemove").hidden = !assetsApi;
-    $("linkLabel").textContent = assetsApi ? "ou colle un lien vers ton cours :" : "Lien vers ton cours :";
+    $("pdfPick").hidden = !!pdf || !ready;
+    $("pdfLoginHint").hidden = !!pdf || ready || !sb;
+    $("pdfReplace").hidden = $("pdfRemove").hidden = !ready;
+    $("linkLabel").textContent = ready ? "ou colle un lien vers ton cours :" : "Lien vers ton cours :";
     $("linkView").hidden = !!pdf || !url || editing;
     $("linkForm").hidden = !!pdf || (!!url && !editing);
     if (url) $("linkOpen").href = url;
     if (document.activeElement !== $("linkInput")) $("linkInput").value = ch.link || "";
     $("linkMsg").textContent = "";
   }
-  const courseUrl = ch => (ch.pdf && ch.pdf.id) ? "/_blob/" + ch.pdf.id : safeUrl(ch.link);
   // envoi du PDF dans l'espace de stockage du site
   let assetsApi = null;
   (async () => {
@@ -899,15 +952,14 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   $("pdfReplace").onclick = () => $("pdfInput").click();
   $("pdfInput").onchange = async () => {
     const f = $("pdfInput").files[0]; $("pdfInput").value = "";
-    const ch = curCh(); if (!f || !ch || !assetsApi) return;
+    const ch = curCh(); if (!f || !ch || !pdfStoreReady()) return;
     if (!/pdf$/i.test(f.type) && !/\.pdf$/i.test(f.name)) { $("pdfMsg").textContent = "Choisis un fichier PDF."; return; }
     if (f.size > 20 * 1024 * 1024) { $("pdfMsg").textContent = PDF_ERRORS.too_large; return; }
     $("pdfMsg").textContent = "Envoi du PDF…"; $("pdfBtn").disabled = true;
     try {
-      const res = await assetsApi.upload(f, { type: "application/pdf" });
-      const old = ch.pdf && ch.pdf.id;
-      ch.pdf = { id: res.id, name: f.name, url: res.url }; pdfFiles[res.id] = f; save();
-      if (old && old !== res.id) assetsApi.delete(old).catch(() => {});
+      const old = ch.pdf;
+      ch.pdf = await pdfUpload(ch, f); pdfFiles[pdfKey(ch)] = f; save();
+      if (old && (old.id || old.path) !== pdfKey(ch)) pdfDelete(old);
       $("pdfMsg").textContent = "PDF ajouté.";
     } catch (e) {
       $("pdfMsg").textContent = PDF_ERRORS[e && e.code] || "L'envoi n'a pas marché. Réessaie.";
@@ -915,8 +967,8 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   };
   $("pdfRemove").onclick = () => {
     const ch = curCh(); if (!ch || !ch.pdf) return;
-    const id = ch.pdf.id; delete ch.pdf; save();
-    if (assetsApi && id) assetsApi.delete(id).catch(() => {});
+    const old = ch.pdf; delete ch.pdf; save();
+    pdfDelete(old);
     $("pdfMsg").textContent = "PDF retiré."; renderLink(ch, false);
   };
   $("linkEdit").onclick = () => { renderLink(curCh(), true); $("linkInput").focus(); };
@@ -1012,10 +1064,10 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   // un pixel « surligné » : couleur vive et claire (jaune, orange, rose, rouge, vert, bleu clair)
   const isHl = (r, g, b) => { const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return mx > 170 && mx - mn > 70; };
   async function extractPdf(ch, onProgress) {
-    const id = ch.pdf.id;
+    const id = pdfKey(ch);
     if (pdfCache[id]) return pdfCache[id];
     const lib = await loadPdfJs();
-    const pdf = await getPdfDoc(id, ch.pdf.url);
+    const pdf = await getPdfDoc(ch.pdf);
     const hl = [], full = [];
     const canvas = document.createElement("canvas"), ctx = canvas.getContext("2d", { willReadFrequently: true });
     for (let i = 1; i <= pdf.numPages; i++) {
@@ -1057,10 +1109,23 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     }
     throw { code: "pdf_fetch" };
   }
-  async function getPdfDoc(id, url) {
+  // PDF rangé sur le compte Supabase (pdf.path) ou dans l'espace de Claude (pdf.id)
+  async function pdfData(pdf) {
+    const k = pdf.id || pdf.path;
+    if (pdfFiles[k]) return pdfFiles[k].arrayBuffer();
+    if (pdf.path) {
+      if (!sb) throw { code: "pdf_fetch" };
+      const { data, error } = await sb.storage.from("cours").download(pdf.path);
+      if (error || !data) throw { code: "pdf_fetch" };
+      return data.arrayBuffer();
+    }
+    return fetchPdf(pdf.id, pdf.url);
+  }
+  async function getPdfDoc(pdf) {
+    const id = pdf.id || pdf.path;
     if (pdfDocs[id]) return pdfDocs[id];
     const lib = await loadPdfJs();
-    const data = pdfFiles[id] ? await pdfFiles[id].arrayBuffer() : await fetchPdf(id, url);
+    const data = await pdfData(pdf);
     pdfDocs[id] = await lib.getDocument({ data }).promise;
     return pdfDocs[id];
   }
@@ -1100,7 +1165,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     $("viewerTitle").textContent = ch.pdf.name || ch.title;
     $("viewerPages").innerHTML = `<div class="vmsg">Ouverture du cours…</div>`;
     viewerZoom = 1;
-    try { viewerDoc = await getPdfDoc(ch.pdf.id, ch.pdf.url); await renderViewer(); }
+    try { viewerDoc = await getPdfDoc(ch.pdf); await renderViewer(); }
     catch (e) { viewerDoc = null; $("viewerPages").innerHTML = `<div class="vmsg">Impossible d'ouvrir ce PDF ici. Essaie de le remplacer en le choisissant à nouveau dans tes dossiers.</div>`; }
   }
   function closeViewer() { $("viewer").hidden = true; document.body.style.overflow = ""; if (viewerObs) viewerObs.disconnect(); viewerToken++; $("viewerPages").innerHTML = ""; }
@@ -1113,7 +1178,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   $("aiGen").onclick = async () => {
     const ch = curCh(); if (!ch || !sampleFn) return;
     const fiche = (ch.fiche || "").trim();
-    const hasPdf = !!(ch.pdf && ch.pdf.id);
+    const hasPdf = !!pdfKey(ch);
     if (!hasPdf && fiche.length < 20) { $("aiMsg").textContent = "Ajoute le PDF de ton cours ou écris ta fiche : Claude s'en sert pour créer les cartes."; return; }
     $("aiGen").disabled = true; $("aiStop").hidden = false;
     aiCtl = new AbortController();
@@ -1225,6 +1290,7 @@ ${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""
     if (current.view === "fiche") renderFiche();
     if (current.view === "settings") renderSettings();
     if (current.view === "calendar") renderCalendar();
+    if (current.view === "account") renderAccount();
     $("jHint").textContent = "Quand tu ajoutes un chapitre, Mémoria planifie tes révisions à " + myJs().map(j => "J" + j).join(", ") + ". Tu peux changer tes J dans Réglages.";
   }
 
@@ -1264,6 +1330,8 @@ ${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""
   $("deleteChapter").onclick = () => $("confirmDelete").hidden = false;
   $("cancelDelete").onclick = () => $("confirmDelete").hidden = true;
   $("okDelete").onclick = () => {
+    const gone = state.chapters.find(c => c.id === current.chapterId);
+    if (gone && gone.pdf) pdfDelete(gone.pdf);
     state.chapters = state.chapters.filter(c => c.id !== current.chapterId); save();
     show(current.from === "today" ? "today" : "subject");
   };
@@ -1287,10 +1355,179 @@ ${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""
   $("clearWord").oninput = () => { $("okClear").disabled = $("clearWord").value.trim() !== "EFFACER"; };
   $("okClear").onclick = () => {
     if ($("clearWord").value.trim() !== "EFFACER") return;
-    resetClear(); state = { accent: state.accent, jList: state.jList, maxPerDay: state.maxPerDay, example: false, dataVersion: 7, subjects: [], chapters: [] }; lastSmooth = null; save(); show("subjects"); };
+    state.chapters.forEach(c => { if (c.pdf) pdfDelete(c.pdf); });
+    resetClear(); state = { accent: state.accent, jList: state.jList, maxPerDay: state.maxPerDay, seenIntro: true, setupDone: true, ownerId: state.ownerId, cloudAt: state.cloudAt, example: false, dataVersion: 7, subjects: [], chapters: [] }; lastSmooth = null; save(); show("subjects"); };
+
+  // ---------- Mon compte : connexion et synchronisation ----------
+  const pdfKey = ch => (ch && ch.pdf && (ch.pdf.id || ch.pdf.path)) || "";
+  const pdfStoreReady = () => !!(assetsApi || sbUser);
+  async function pdfUpload(ch, f) {
+    if (sbUser) {
+      const path = sbUser.id + "/" + ch.id + "-" + Date.now() + ".pdf";
+      const { error } = await sb.storage.from("cours").upload(path, f, { contentType: "application/pdf", upsert: false });
+      if (error) {
+        const m = (error.message || "") + " " + (error.statusCode || "");
+        throw { code: /maximum|too large|413/i.test(m) ? "too_large" : /mime|type/i.test(m) ? "unsupported_type" : /quota/i.test(m) ? "quota_exceeded" : /policy|security|403|unauthor/i.test(m) ? "not_granted" : "upload" };
+      }
+      return { path, name: f.name };
+    }
+    const res = await assetsApi.upload(f, { type: "application/pdf" });
+    return { id: res.id, name: f.name, url: res.url };
+  }
+  function pdfDelete(pdf) {
+    if (!pdf) return;
+    try {
+      if (pdf.path && sb && sbUser) sb.storage.from("cours").remove([pdf.path]).catch(() => {});
+      else if (pdf.id && assetsApi) assetsApi.delete(pdf.id).catch(() => {});
+    } catch (e) {}
+  }
+
+  const hasData = d => !!(d && ((d.subjects && d.subjects.length) || (d.chapters && d.chapters.length)));
+  const hhmm = () => new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  function setSync(t) { $("accSync").textContent = t; }
+  function cloudData() { const d = { ...state }; LOCAL_ONLY.forEach(k => delete d[k]); return d; }
+  function schedulePush() { clearTimeout(pushTimer); pushTimer = setTimeout(pushNow, 1200); setSync("Enregistrement en cours…"); }
+  async function pushNow() {
+    clearTimeout(pushTimer); pushTimer = null;
+    if (!sb || !sbUser || state.ownerId !== sbUser.id) return true;
+    const at = new Date().toISOString();
+    let error;
+    try { ({ error } = await sb.from("memoria_state").upsert({ user_id: sbUser.id, data: cloudData(), updated_at: at })); } catch (e) { error = e; }
+    if (error) { setSync("Pas encore enregistré en ligne (pas de réseau ?). Mémoria réessaie toute seule."); if (!pushTimer) pushTimer = setTimeout(pushNow, 15000); return false; }
+    if (!pushTimer) state.dirty = false; // rien n'a changé pendant l'envoi
+    state.cloudAt = at; localSave();
+    setSync("Tout est enregistré sur ton compte ✓ (" + hhmm() + ")");
+    return true;
+  }
+  function useCloud(row) {
+    const d = row.data || {};
+    state = { ...d, subjects: Array.isArray(d.subjects) ? d.subjects : [], chapters: Array.isArray(d.chapters) ? d.chapters : [],
+      seenIntro: true, setupDone: true, ownerId: sbUser.id, cloudAt: row.updated_at, dirty: false };
+    localSave(); lastSmooth = null;
+    if (!$("setup").hidden) { $("setup").hidden = true; $("app").hidden = false; }
+    render();
+    setSync("Tout est enregistré sur ton compte ✓ (" + hhmm() + ")");
+  }
+  let pulling = false;
+  async function pullCloud() {
+    if (!sb || !sbUser || pulling) return;
+    if (state.ownerId === sbUser.id && state.dirty) { await pushNow(); return; }
+    pulling = true;
+    try {
+      const { data: row, error } = await sb.from("memoria_state").select("data,updated_at").eq("user_id", sbUser.id).maybeSingle();
+      if (error) { setSync("Impossible de joindre ton compte pour l'instant."); return; }
+      if (state.ownerId !== sbUser.id) {
+        // 1re connexion sur cet appareil
+        if (row && hasData(row.data) && hasData(state)) { pendingCloud = row; $("accConflict").hidden = false; show("account"); return; }
+        if (row && hasData(row.data)) { useCloud(row); if (current.view === "account") show("today"); }
+        else { state.ownerId = sbUser.id; await pushNow(); }
+      } else if (row && row.updated_at !== state.cloudAt) useCloud(row);
+      else setSync("Tout est enregistré sur ton compte ✓ (" + hhmm() + ")");
+    } catch (e) { setSync("Impossible de joindre ton compte pour l'instant."); }
+    finally { pulling = false; }
+  }
+  $("accKeepCloud").onclick = () => { $("accConflict").hidden = true; if (pendingCloud) useCloud(pendingCloud); pendingCloud = null; show("today"); };
+  $("accKeepLocal").onclick = () => { $("accConflict").hidden = true; pendingCloud = null; state.ownerId = sbUser.id; pushNow(); show("today"); };
+
+  function renderAccount() {
+    $("accOff").hidden = !!sb;
+    $("accOut").hidden = !sb || !!sbUser;
+    $("accIn").hidden = !sbUser;
+    $("accNewPass").hidden = !(sbUser && recovering);
+    if (sbUser) $("accWho").textContent = sbUser.email || "";
+    $("tab-account").textContent = sbUser ? "Mon compte ✓" : "Mon compte";
+    $("footNote").textContent = sbUser ? "Tes révisions sont enregistrées sur ton compte : tu les retrouves sur tous tes appareils." : sb ? "Tes révisions sont gardées dans ce navigateur, sur cet appareil. Crée un compte (menu ☰ › Mon compte) pour les retrouver partout." : "Tes révisions sont gardées dans ce navigateur, sur cet appareil.";
+    if (current.view === "fiche") renderLink(curCh(), false);
+  }
+  const AUTH_ERRORS = {
+    invalid_credentials: "Adresse mail ou mot de passe incorrect.",
+    email_not_confirmed: "Confirme d'abord ton adresse : clique sur le lien reçu par mail (regarde aussi dans les spams).",
+    user_already_exists: "Un compte existe déjà avec cette adresse. Clique sur « Se connecter ».",
+    weak_password: "Mot de passe trop faible : mets au moins 6 caractères.",
+    over_email_send_rate_limit: "Trop de mails envoyés pour l'instant. Réessaie dans une heure.",
+    over_request_rate_limit: "Trop d'essais d'un coup. Attends une minute et réessaie.",
+    email_address_invalid: "Cette adresse mail n'est pas valide."
+  };
+  const authMsg = err => AUTH_ERRORS[err && err.code] || (/fetch|network/i.test(err && err.message || "") ? "Pas de connexion internet. Réessaie quand tu as du réseau." : "Ça n'a pas marché. Réessaie dans un instant.");
+  function busy(on) { ["accLogin", "accSignup", "accForgot"].forEach(id => $(id).disabled = on); }
+  $("accForm").onsubmit = async e => {
+    e.preventDefault(); if (!sb) return;
+    busy(true); $("accMsg").textContent = "Connexion…";
+    try {
+      const { error } = await sb.auth.signInWithPassword({ email: $("accEmail").value.trim(), password: $("accPass").value });
+      $("accMsg").textContent = error ? authMsg(error) : "";
+      if (!error) $("accPass").value = "";
+    } catch (err) { $("accMsg").textContent = authMsg(err); }
+    busy(false);
+  };
+  $("accSignup").onclick = async () => {
+    if (!sb || !$("accForm").reportValidity()) return;
+    busy(true); $("accMsg").textContent = "Création du compte…";
+    try {
+      const { data, error } = await sb.auth.signUp({ email: $("accEmail").value.trim(), password: $("accPass").value, options: { emailRedirectTo: location.origin + location.pathname } });
+      if (error) $("accMsg").textContent = authMsg(error);
+      else if (data && data.session) { $("accMsg").textContent = ""; $("accPass").value = ""; }
+      else if (data && data.user && data.user.identities && !data.user.identities.length) $("accMsg").textContent = AUTH_ERRORS.user_already_exists;
+      else $("accMsg").textContent = "Compte créé ! Ouvre le mail de confirmation (regarde aussi dans les spams), clique sur le lien, puis connecte-toi ici.";
+    } catch (err) { $("accMsg").textContent = authMsg(err); }
+    busy(false);
+  };
+  $("accForgot").onclick = async () => {
+    if (!sb) return;
+    const email = $("accEmail").value.trim();
+    if (!email || !$("accEmail").checkValidity()) { $("accMsg").textContent = "Écris d'abord ton adresse mail au-dessus, puis reclique."; $("accEmail").focus(); return; }
+    busy(true);
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      $("accMsg").textContent = error ? authMsg(error) : "Si un compte existe avec cette adresse, tu vas recevoir un mail pour choisir un nouveau mot de passe.";
+    } catch (err) { $("accMsg").textContent = authMsg(err); }
+    busy(false);
+  };
+  $("accNewPassForm").onsubmit = async e => {
+    e.preventDefault();
+    try {
+      const { error } = await sb.auth.updateUser({ password: $("accNewPassInput").value });
+      if (error) { $("accNewPassMsg").textContent = authMsg(error); return; }
+      recovering = false; $("accNewPassInput").value = ""; renderAccount(); $("accOutMsg").textContent = "Nouveau mot de passe enregistré ✓";
+    } catch (err) { $("accNewPassMsg").textContent = authMsg(err); }
+  };
+  $("accLogout").onclick = async () => {
+    $("accLogout").disabled = true; $("accOutMsg").textContent = "";
+    if (state.dirty && !(await pushNow())) {
+      $("accOutMsg").textContent = "Tes dernières modifications ne sont pas encore enregistrées en ligne. Reconnecte-toi à internet, puis réessaie.";
+      $("accLogout").disabled = false; return;
+    }
+    try { await sb.auth.signOut({ scope: "local" }); } catch (e) {}
+    // on ne laisse pas tes données sur l'appareil (ordi partagé, téléphone prêté…)
+    state = { accent: state.accent, seenIntro: true, setupDone: true, example: false, dataVersion: 7, subjects: [], chapters: [] };
+    Object.keys(pdfDocs).forEach(k => delete pdfDocs[k]); Object.keys(pdfCache).forEach(k => delete pdfCache[k]); Object.keys(pdfFiles).forEach(k => delete pdfFiles[k]);
+    sbUser = null; recovering = false; pendingCloud = null; $("accConflict").hidden = true;
+    localSave(); $("accLogout").disabled = false; show("account");
+  };
+
+  function startAuth() {
+    renderAccount();
+    if (!sb) return;
+    sb.auth.onAuthStateChange((event, session) => {
+      const u = (session && session.user) || null;
+      const changed = (u && u.id) !== (sbUser && sbUser.id);
+      if (event === "PASSWORD_RECOVERY") recovering = true;
+      sbUser = u;
+      if (!u) { $("accConflict").hidden = true; pendingCloud = null; }
+      renderAccount();
+      if (recovering) { state.seenIntro = true; showIntro(false); show("account"); }
+      // les appels à Supabase se font juste après (pas dans ce rappel)
+      if (u && changed) setTimeout(pullCloud, 0);
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") pullCloud();
+      else if (state.dirty) pushNow();
+    });
+  }
 
   show("today");
   if (!state.seenIntro) showIntro(true);
+  startAuth();
 })();
 </script>
 
