@@ -660,7 +660,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   // ---------- Compte en ligne (Supabase) : les données suivent l'étudiant sur tous ses appareils ----------
   const SB_URL = "https://djlmtvtynxwffcrgwkzw.supabase.co";
   const SB_KEY = "sb_publishable_LtL35C9ta4X_FELWYKPTAw_2HYTZHnm"; // clé publique (faite pour être dans le site)
-  const LOCAL_ONLY = ["ownerId", "cloudAt", "dirty"];
+  const LOCAL_ONLY = ["ownerId", "cloudAt", "dirty", "allowEmpty"];
   let sb = null, sbUser = null, pushTimer = null, pendingCloud = null, recovering = false;
   try { if (window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) { sb = null; }
   // ancienne version de test (tableau de médecine) restée dans le navigateur : on l'efface
@@ -1525,7 +1525,7 @@ ${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""
   $("okClear").onclick = () => {
     if ($("clearWord").value.trim() !== "EFFACER") return;
     state.chapters.forEach(c => { if (c.pdf) pdfDelete(c.pdf); });
-    resetClear(); state = { accent: state.accent, jList: state.jList, maxPerDay: state.maxPerDay, seenIntro: true, setupDone: true, ownerId: state.ownerId, cloudAt: state.cloudAt, example: false, dataVersion: 7, subjects: [], chapters: [] }; lastSmooth = null; save(); show("subjects"); };
+    resetClear(); state = { accent: state.accent, jList: state.jList, maxPerDay: state.maxPerDay, seenIntro: true, setupDone: true, ownerId: state.ownerId, cloudAt: state.cloudAt, allowEmpty: true, example: false, dataVersion: 7, subjects: [], chapters: [] }; lastSmooth = null; save(); show("subjects"); };
 
   // ---------- Importer (emploi du temps recopié par l'IA de l'étudiant) ----------
   const IMP_PROMPT = `Voici une photo de mon emploi du temps (ou de la liste de mes matières). Recopie-la pour mon site de révision, au format suivant, une ligne par cours, sans rien écrire d'autre :
@@ -1648,16 +1648,24 @@ UE2 ; Histoire ; La Révolution française ; 18/09/2026
   const hhmm = () => new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   function setSync(t) { $("accSync").textContent = t; }
   function cloudData() { const d = { ...state }; LOCAL_ONLY.forEach(k => delete d[k]); return d; }
-  function schedulePush() { clearTimeout(pushTimer); pushTimer = setTimeout(pushNow, 1200); setSync("Enregistrement en cours…"); }
+  function schedulePush() { clearTimeout(pushTimer); pushTimer = setTimeout(pushNow, 600); setSync("Enregistrement en cours…"); }
   async function pushNow() {
     clearTimeout(pushTimer); pushTimer = null;
     if (!sb || !sbUser || state.ownerId !== sbUser.id) return true;
+    // sécurité : un appareil vide n'écrase jamais un compte rempli (sauf « Repartir de zéro »)
+    if (!hasData(state) && !state.allowEmpty) {
+      try {
+        const { data: row, error: e1 } = await sb.from("memoria_state").select("data,updated_at").eq("user_id", sbUser.id).maybeSingle();
+        if (e1) { syncFail("lire", e1); if (!pushTimer) pushTimer = setTimeout(pushNow, 15000); return false; }
+        if (row && hasData(row.data)) { useCloud(row); return true; }
+      } catch (e) { syncFail("lire", e); return false; }
+    }
     const at = new Date().toISOString();
     let error;
     try { ({ error } = await sb.from("memoria_state").upsert({ user_id: sbUser.id, data: cloudData(), updated_at: at })); } catch (e) { error = e; }
     if (error) { syncFail("enregistrer", error); if (!pushTimer) pushTimer = setTimeout(pushNow, 15000); return false; }
     syncOk();
-    if (!pushTimer) state.dirty = false; // rien n'a changé pendant l'envoi
+    if (!pushTimer) { state.dirty = false; delete state.allowEmpty; } // rien n'a changé pendant l'envoi
     state.cloudAt = at; localSave();
     setSync("Tout est enregistré sur ton compte ✓ (" + hhmm() + ")");
     return true;
@@ -1693,7 +1701,7 @@ UE2 ; Histoire ; La Révolution française ; 18/09/2026
       if (state.ownerId !== sbUser.id) {
         // 1re connexion sur cet appareil
         if (row && hasData(row.data) && hasData(state)) { pendingCloud = row; $("accConflict").hidden = false; show("account"); return; }
-        if (row && hasData(row.data)) useCloud(row);
+        if (row && (hasData(row.data) || !hasData(state))) useCloud(row); // on reprend le compte (et ses réglages)
         else { state.ownerId = sbUser.id; await pushNow(); }
       } else if (row && !hasData(row.data) && hasData(state)) { state.dirty = true; await pushNow(); } // jamais effacer l'appareil avec un compte vide
       else if (row && (!state.cloudAt || Date.parse(row.updated_at) > Date.parse(state.cloudAt) + 5)) useCloud(row);
@@ -1821,6 +1829,7 @@ UE2 ; Histoire ; La Révolution française ; 18/09/2026
       if (document.visibilityState === "visible") pullCloud();
       else if (state.dirty) pushNow();
     });
+    window.addEventListener("pagehide", () => { if (state.dirty) pushNow(); });
   }
 
   startAuth();
