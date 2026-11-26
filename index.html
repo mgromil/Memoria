@@ -321,6 +321,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       <button class="item" id="tab-intro">Présentation</button>
     </nav>
   </header>
+  <div class="alert" id="syncWarn" hidden></div>
 
 
 
@@ -1654,12 +1655,22 @@ UE2 ; Histoire ; La Révolution française ; 18/09/2026
     const at = new Date().toISOString();
     let error;
     try { ({ error } = await sb.from("memoria_state").upsert({ user_id: sbUser.id, data: cloudData(), updated_at: at })); } catch (e) { error = e; }
-    if (error) { setSync("Pas encore enregistré en ligne (pas de réseau ?). Mémoria réessaie toute seule."); if (!pushTimer) pushTimer = setTimeout(pushNow, 15000); return false; }
+    if (error) { syncFail("enregistrer", error); if (!pushTimer) pushTimer = setTimeout(pushNow, 15000); return false; }
+    syncOk();
     if (!pushTimer) state.dirty = false; // rien n'a changé pendant l'envoi
     state.cloudAt = at; localSave();
     setSync("Tout est enregistré sur ton compte ✓ (" + hhmm() + ")");
     return true;
   }
+  // problème de synchro : on le montre clairement (avec le détail, pour pouvoir le corriger)
+  function syncFail(what, err) {
+    const detail = [err && err.code, err && err.message].filter(Boolean).join(" · ") || "erreur inconnue";
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    setSync("⚠️ Impossible d'" + what + " tes données en ligne : " + detail);
+    $("syncWarn").innerHTML = `<span><strong>⚠️ Tes changements ne sont pas encore enregistrés sur ton compte.</strong> ${offline ? "Tu n'as pas de réseau : Mémoria réessaiera toute seule." : "Ne te déconnecte pas pour l'instant. Mémoria réessaie toute seule."}</span><span class="small">Détail : ${esc(detail)}</span>`;
+    $("syncWarn").hidden = false;
+  }
+  function syncOk() { $("syncWarn").hidden = true; }
   function useCloud(row) {
     const d = row.data || {};
     state = { ...d, subjects: Array.isArray(d.subjects) ? d.subjects : [], chapters: Array.isArray(d.chapters) ? d.chapters : [],
@@ -1677,15 +1688,17 @@ UE2 ; Histoire ; La Révolution française ; 18/09/2026
     pulling = true;
     try {
       const { data: row, error } = await sb.from("memoria_state").select("data,updated_at").eq("user_id", sbUser.id).maybeSingle();
-      if (error) { setSync("Impossible de joindre ton compte pour l'instant."); return; }
+      if (error) { syncFail("lire", error); return; }
+      syncOk();
       if (state.ownerId !== sbUser.id) {
         // 1re connexion sur cet appareil
         if (row && hasData(row.data) && hasData(state)) { pendingCloud = row; $("accConflict").hidden = false; show("account"); return; }
         if (row && hasData(row.data)) useCloud(row);
         else { state.ownerId = sbUser.id; await pushNow(); }
-      } else if (row && row.updated_at !== state.cloudAt) useCloud(row);
+      } else if (row && !hasData(row.data) && hasData(state)) { state.dirty = true; await pushNow(); } // jamais effacer l'appareil avec un compte vide
+      else if (row && (!state.cloudAt || Date.parse(row.updated_at) > Date.parse(state.cloudAt) + 5)) useCloud(row);
       else setSync("Tout est enregistré sur ton compte ✓ (" + hhmm() + ")");
-    } catch (e) { setSync("Impossible de joindre ton compte pour l'instant."); }
+    } catch (e) { syncFail("lire", e); }
     finally { pulling = false; }
   }
   $("accKeepCloud").onclick = () => { $("accConflict").hidden = true; if (pendingCloud) useCloud(pendingCloud); pendingCloud = null; show("today"); };
