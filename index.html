@@ -148,6 +148,15 @@ button.btn.big { padding: 13px 22px; font-size: 1rem; border-radius: 12px; }
 .steps li span, .feats span { color: var(--muted); font-size: 0.9rem; }
 .feats { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
 .feats div { display: flex; flex-direction: column; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.setup-in { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; padding-block: 12px 40px; }
+.setup-prog { display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; color: var(--muted); }
+.setup-prog .bar { height: 6px; border-radius: 6px; background: var(--accent-soft); overflow: hidden; }
+.setup-prog .bar i { display: block; height: 100%; background: var(--accent); border-radius: 6px; transition: width .25s ease; }
+.opt { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 12px; padding: 12px; cursor: pointer; }
+.opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.opt input { margin-top: 4px; accent-color: var(--accent-ink); }
+.setup input[type="date"], .chapter-date input[type="date"] { font: 400 0.95rem var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; }
+.setup-nav { justify-content: flex-end; }
 .intro-end { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 10px; }
 .jchips { display: flex; flex-wrap: wrap; gap: 8px; }
 .jchip { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-soft); color: var(--accent-ink); border-radius: 999px; padding: 6px 6px 6px 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -227,6 +236,51 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     <div class="intro-end">
       <button class="btn primary big" id="introStart2">Commencer</button>
       <span class="small muted">Gratuit et sans inscription. Tes révisions restent sur ton appareil.</span>
+    </div>
+  </div>
+</section>
+
+<!-- DÉMARRAGE GUIDÉ -->
+<section class="setup" id="setup" hidden>
+  <div class="setup-in">
+    <div class="intro-brand">Mémoria<span>.</span></div>
+    <div class="setup-prog"><span id="setupStepTxt">Étape 1 sur 4</span><div class="bar"><i id="setupBar"></i></div></div>
+
+    <div class="card setup-step" data-step="1">
+      <h2>Quels J veux-tu utiliser ?</h2>
+      <p class="small muted" style="margin:0">Ce sont les jours où tu revois un chapitre après l'avoir vu en cours. J0 = le jour même.</p>
+      <label class="opt"><input type="radio" name="jmode" value="default" checked> <span><b>Classique : J0, J3, J7, J14, J30</b><br><span class="small muted">Le plus utilisé, parfait pour commencer.</span></span></label>
+      <label class="opt"><input type="radio" name="jmode" value="custom"> <span><b>Mes propres J</b><br><span class="small muted">Écris les nombres séparés par des virgules.</span></span></label>
+      <input type="text" id="setupJs" placeholder="ex. 0, 1, 3, 7, 21, 45" disabled>
+      <span class="small" id="setupJsMsg" style="color:var(--late)"></span>
+    </div>
+
+    <div class="card setup-step" data-step="2" hidden>
+      <h2>Combien de révisions maximum par jour ?</h2>
+      <p class="small muted" style="margin:0">Au-delà, Mémoria te prévient et peut répartir le surplus sur les jours suivants. Tu pourras le changer dans Réglages.</p>
+      <div class="row"><input type="number" id="setupMax" min="1" max="50" value="6"> <span class="muted">révisions par jour</span></div>
+    </div>
+
+    <div class="card setup-step" data-step="3" hidden>
+      <h2>Ajoute ta première matière</h2>
+      <p class="small muted" style="margin:0">Si tes cours sont rangés en UE, indique-la : tes matières seront classées par UE.</p>
+      <input type="text" id="setupUe" placeholder="UE (facultatif, ex. UE21)" maxlength="40">
+      <input type="text" id="setupSub" placeholder="Matière (ex. Physiologie)" maxlength="40">
+      <span class="small" id="setupSubMsg" style="color:var(--late)"></span>
+    </div>
+
+    <div class="card setup-step" data-step="4" hidden>
+      <h2>Ajoute ton premier chapitre</h2>
+      <p class="small muted" style="margin:0">Un chapitre = un cours ou une notion. Indique le jour où tu l'as vu en cours : Mémoria calcule ses dates de révision. Si c'était il y a plusieurs jours, les révisions déjà passées sont comptées comme faites.</p>
+      <input type="text" id="setupCh" placeholder="Chapitre (ex. Le cycle cardiaque)" maxlength="80">
+      <div class="row"><label for="setupDate" class="small muted">Vu en cours le :</label><input type="date" id="setupDate"></div>
+      <span class="small muted" id="setupPreview"></span>
+    </div>
+
+    <div class="row setup-nav">
+      <button class="btn ghost" id="setupBack" hidden>← Retour</button>
+      <button class="btn ghost" id="setupSkip" hidden>Passer</button>
+      <button class="btn primary big" id="setupNext">Suivant</button>
     </div>
   </div>
 </section>
@@ -312,6 +366,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       </form>
       <form class="row" id="addChapterForm">
         <input type="text" id="newChapter" placeholder="Nouveau chapitre ou notion" maxlength="80" required>
+        <span class="row chapter-date"><label for="newChapterDate" class="small muted">vu le</label><input type="date" id="newChapterDate"></span>
         <button class="btn primary" type="submit">Ajouter</button>
       </form>
       <p class="small muted" style="margin:0" id="jHint"></p>
@@ -478,6 +533,12 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
 
   const uid = () => Math.random().toString(36).slice(2, 10);
   function myJs() { return (state && state.jList && state.jList.length) ? state.jList : J_DEFAUT; }
+  // un chapitre vu un jour passé : les révisions déjà passées sont considérées comme faites
+  function newChapter(subjectId, title, start) {
+    if (!start || start > TODAY) start = TODAY;
+    const reviews = makeReviews(start).map(r => ({ ...r, done: r.date < TODAY }));
+    return { id: uid(), subjectId, title, start, fiche: "", reviews };
+  }
   function makeReviews(start) { return myJs().map(j => ({ j, date: addDays(start, j), done: false })); }
 
   // ---------- Sauvegarde ----------
@@ -531,7 +592,70 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   $("welcomeGo").onclick = () => show("subjects");
   // page de présentation : affichée à la première visite, puis depuis le menu
   function showIntro(on) { $("intro").hidden = !on; $("app").hidden = on; window.scrollTo(0, 0); }
-  function startApp() { state.seenIntro = true; save(); showIntro(false); show(state.subjects.length ? "today" : "subjects"); }
+  function startApp() {
+    state.seenIntro = true; save(); showIntro(false);
+    if (!state.setupDone && !state.subjects.length) openSetup();
+    else show(state.subjects.length ? "today" : "subjects");
+  }
+  // ---------- Démarrage guidé ----------
+  let setupStep = 1;
+  function parseJs(txt) {
+    const nums = txt.split(/[^0-9]+/).filter(Boolean).map(Number).filter(n => n >= 0 && n <= 365);
+    return [...new Set(nums)].sort((a, b) => a - b);
+  }
+  function openSetup() {
+    $("setup").hidden = false; $("app").hidden = true; $("intro").hidden = true;
+    $("setupDate").value = TODAY; $("setupDate").max = TODAY;
+    setupStep = 1; renderSetup(); window.scrollTo(0, 0);
+  }
+  function renderSetup() {
+    document.querySelectorAll(".setup-step").forEach(s => s.hidden = Number(s.dataset.step) !== setupStep);
+    $("setupStepTxt").textContent = `Étape ${setupStep} sur 4`;
+    $("setupBar").style.width = (setupStep * 25) + "%";
+    $("setupBack").hidden = setupStep === 1;
+    $("setupSkip").hidden = setupStep < 3;
+    $("setupNext").textContent = setupStep === 4 ? "C'est parti !" : "Suivant";
+    if (setupStep === 4) previewSetup();
+  }
+  function previewSetup() {
+    const js = state.jList && state.jList.length ? state.jList : J_DEFAUT;
+    const start = $("setupDate").value || TODAY;
+    $("setupPreview").textContent = "Révisions prévues : " + js.map(j => "J" + j + " (" + new Date(addDays(start, j) + "T12:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) + ")").join(", ");
+  }
+  document.querySelectorAll('input[name="jmode"]').forEach(r => r.onchange = () => { $("setupJs").disabled = r.value !== "custom" || !r.checked; if (!$("setupJs").disabled) $("setupJs").focus(); });
+  $("setupDate").onchange = previewSetup;
+  function finishSetup() { state.setupDone = true; save(); $("setup").hidden = true; $("app").hidden = false; show(state.subjects.length ? "today" : "subjects"); }
+  $("setupBack").onclick = () => { setupStep = Math.max(1, setupStep - 1); renderSetup(); };
+  $("setupSkip").onclick = () => finishSetup();
+  $("setupNext").onclick = () => {
+    if (setupStep === 1) {
+      const custom = document.querySelector('input[name="jmode"]:checked').value === "custom";
+      if (custom) {
+        const js = parseJs($("setupJs").value);
+        if (js.length < 2) { $("setupJsMsg").textContent = "Écris au moins 2 nombres, par exemple 0, 3, 7."; return; }
+        state.jList = js;
+      } else state.jList = J_DEFAUT.slice();
+      $("setupJsMsg").textContent = "";
+    }
+    if (setupStep === 2) { const n = Math.round(Number($("setupMax").value)); state.maxPerDay = n >= 1 && n <= 50 ? n : 6; }
+    if (setupStep === 3) {
+      const name = $("setupSub").value.trim();
+      if (!name) { $("setupSubMsg").textContent = "Écris le nom d'une matière, ou clique sur « Passer »."; return; }
+      $("setupSubMsg").textContent = "";
+      const ue = $("setupUe").value.trim();
+      let s = state.subjects.find(x => x.name.toLowerCase() === name.toLowerCase() && (x.ue || "") === ue);
+      if (!s) { s = { id: uid(), ue, name, color: SUB_COLORS[state.subjects.length % SUB_COLORS.length] }; state.subjects.push(s); }
+      state.setupSubjectId = s.id;
+    }
+    if (setupStep === 4) {
+      const title = $("setupCh").value.trim();
+      const sid = state.setupSubjectId;
+      if (title && sid) state.chapters.push(newChapter(sid, title, $("setupDate").value || TODAY));
+      delete state.setupSubjectId;
+      save(); finishSetup(); return;
+    }
+    save(); setupStep++; renderSetup();
+  };
   $("introStart").onclick = startApp; $("introStart2").onclick = startApp;
   $("tab-intro").onclick = () => showIntro(true);
   // menu déroulant (les 3 barres)
@@ -720,6 +844,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     $("subjectUe").textContent = s.ue ? s.ue : "Sans UE";
     if (document.activeElement !== $("editUe")) $("editUe").value = s.ue || "";
     if (document.activeElement !== $("newChapter")) $("chapterAlert").hidden = true;
+    $("newChapterDate").max = TODAY; if (!$("newChapterDate").value) $("newChapterDate").value = TODAY;
     const list = $("chapterList"); list.innerHTML = "";
     const chs = state.chapters.filter(c => c.subjectId === s.id);
     if (!chs.length) list.innerHTML = `<div class="empty">Pas encore de chapitre. Ajoute ta première notion ci-dessus.</div>`;
@@ -1121,7 +1246,7 @@ ${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""
   $("addChapterForm").onsubmit = e => {
     e.preventDefault();
     const title = $("newChapter").value.trim(); if (!title) return;
-    const ch = { id: uid(), subjectId: current.subjectId, title, start: TODAY, fiche: "", reviews: makeReviews(TODAY) };
+    const ch = newChapter(current.subjectId, title, $("newChapterDate").value || TODAY);
     state.chapters.push(ch);
     $("newChapter").value = ""; lastSmooth = null; save(); render();
     // alerte si ce nouveau chapitre fait dépasser le max certains jours
