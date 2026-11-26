@@ -267,6 +267,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       <input type="text" id="setupUe" placeholder="UE (facultatif, ex. UE21)" maxlength="40">
       <input type="text" id="setupSub" placeholder="Matière (ex. Physiologie)" maxlength="40">
       <span class="small" id="setupSubMsg" style="color:var(--late)"></span>
+      <div class="row small"><span class="muted">Tu as plein de matières ?</span><button class="btn ghost small" id="setupImport" type="button">Les importer d'un coup depuis une photo</button></div>
     </div>
 
     <div class="card setup-step" data-step="4" hidden>
@@ -294,6 +295,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     <nav class="menu" id="mainMenu" hidden>
       <button class="item" id="tab-today">Aujourd'hui</button>
       <button class="item" id="tab-subjects">Matières</button>
+      <button class="item" id="tab-import">Importer mes cours</button>
       <button class="item" id="tab-calendar">Calendrier</button>
       <button class="item" id="tab-settings">Réglages</button>
       <button class="item" id="tab-account">Mon compte</button>
@@ -332,7 +334,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
         <li>Dans chaque matière, ajoute tes chapitres.</li>
         <li>Reviens ici chaque jour pour voir tes J du jour.</li>
       </ol>
-      <div class="row"><button class="btn primary" id="welcomeGo">Ajouter ma première matière</button></div>
+      <div class="row"><button class="btn primary" id="welcomeGo">Ajouter ma première matière</button><button class="btn" id="welcomeImport">Importer mon emploi du temps</button></div>
     </div>
     <div class="list" id="todayList"></div>
     <h3 style="margin-top:8px">Les 7 prochains jours</h3>
@@ -350,6 +352,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
         <button class="btn primary" type="submit">Ajouter</button>
       </form>
       <div class="row small muted">Couleur : <div class="colors" id="subjectColors"></div></div>
+      <div class="row small"><span class="muted">Beaucoup de matières ?</span><button class="btn ghost small" id="subjectsImport" type="button">Importer depuis une photo de ton emploi du temps</button></div>
     </div>
     <div class="grid-sub" id="subjectGrid"></div>
   </section>
@@ -468,6 +471,32 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     <p class="small muted" id="accOff" hidden>La connexion aux comptes n'est pas disponible pour l'instant. Vérifie ta connexion internet, puis recharge la page.</p>
   </section>
 
+
+  <!-- IMPORTER -->
+  <section id="view-import" class="wrap" style="gap:16px;width:100%" hidden>
+    <div class="card">
+      <h2>Importer mes cours</h2>
+      <p class="small muted" style="margin:0">Tu as une photo de ton emploi du temps ou de la liste de tes UE ? Une IA gratuite (Claude, ChatGPT…) peut la recopier pour toi, et Mémoria range tout.</p>
+      <h3 style="margin:6px 0 0">1. Copie cette consigne</h3>
+      <textarea id="impPrompt" rows="7" readonly></textarea>
+      <div class="row"><button class="btn primary" id="impCopy" type="button">Copier la consigne</button><span class="saved" id="impCopied" hidden>Copiée ✓</span></div>
+      <h3 style="margin:6px 0 0">2. Va dans ton IA</h3>
+      <p class="small" style="margin:0">Ouvre Claude ou ChatGPT (gratuits), colle la consigne et ajoute la photo ou la capture de ton emploi du temps. Envoie.</p>
+      <h3 style="margin:6px 0 0">3. Colle sa réponse ici</h3>
+      <textarea id="impText" rows="8" placeholder="UE21 Appareil locomoteur ; Sémiologie ; Sémiologie de la marche ; 27/10/2026"></textarea>
+      <div class="row"><button class="btn primary" id="impCheck" type="button">Voir ce qui va être ajouté</button></div>
+      <span class="small" id="impMsg" role="status"></span>
+    </div>
+    <div class="card" id="impPreview" hidden>
+      <h2>4. Vérifie avant de valider</h2>
+      <p class="small muted" id="impSummary" style="margin:0"></p>
+      <div id="impList" class="small" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="alert" id="impErrors" hidden></div>
+      <p class="small muted" style="margin:0">Les révisions déjà passées sont considérées comme faites. Tu pourras tout modifier ensuite.</p>
+      <div class="row"><button class="btn primary" id="impOk" type="button">Valider l'import</button><button class="btn ghost" id="impCancel" type="button">Annuler</button></div>
+    </div>
+  </section>
+
   <!-- UNE FICHE -->
   <section id="view-fiche" class="wrap" style="gap:16px" hidden>
     <button class="back" id="backToSubject">← Retour</button>
@@ -575,8 +604,8 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   const uid = () => Math.random().toString(36).slice(2, 10);
   function myJs() { return (state && state.jList && state.jList.length) ? state.jList : J_DEFAUT; }
   // un chapitre vu un jour passé : les révisions déjà passées sont considérées comme faites
-  function newChapter(subjectId, title, start) {
-    if (!start || start > TODAY) start = TODAY;
+  function newChapter(subjectId, title, start, allowFuture) {
+    if (!start || (start > TODAY && !allowFuture)) start = TODAY;
     const reviews = makeReviews(start).map(r => ({ ...r, done: r.date < TODAY }));
     return { id: uid(), subjectId, title, start, fiche: "", reviews };
   }
@@ -632,10 +661,10 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   let current = { view: "today", subjectId: null, chapterId: null, from: "today" };
   function show(view) {
     current.view = view;
-    ["today", "subjects", "subject", "fiche", "settings", "calendar", "account"].forEach(v => $("view-" + v).hidden = v !== view);
+    ["today", "subjects", "subject", "fiche", "settings", "calendar", "account", "import"].forEach(v => $("view-" + v).hidden = v !== view);
     const section = view === "fiche" ? current.from : view === "subject" ? "subjects" : view;
-    const names = { today: "Aujourd'hui", subjects: "Matières", subject: "Matières", calendar: "Calendrier", settings: "Réglages", account: "Mon compte" };
-    ["today", "subjects", "calendar", "settings", "account"].forEach(v => $("tab-" + v).setAttribute("aria-current", v === section ? "page" : "false"));
+    const names = { today: "Aujourd'hui", subjects: "Matières", subject: "Matières", calendar: "Calendrier", settings: "Réglages", account: "Mon compte", import: "Importer" };
+    ["today", "subjects", "calendar", "settings", "account", "import"].forEach(v => $("tab-" + v).setAttribute("aria-current", v === section ? "page" : "false"));
     $("pageName").textContent = names[section] || "";
     render();
     window.scrollTo(0, 0);
@@ -645,6 +674,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   $("tab-settings").onclick = () => show("settings");
   $("tab-calendar").onclick = () => show("calendar");
   $("tab-account").onclick = () => show("account");
+  $("tab-import").onclick = $("welcomeImport").onclick = $("subjectsImport").onclick = () => show("import");
   $("welcomeGo").onclick = () => show("subjects");
   // page de présentation : affichée à la première visite, puis depuis le menu
   function showIntro(on) { $("intro").hidden = !on; $("app").hidden = on; window.scrollTo(0, 0); }
@@ -683,6 +713,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   function finishSetup() { state.setupDone = true; save(); $("setup").hidden = true; $("app").hidden = false; show(state.subjects.length ? "today" : "subjects"); }
   $("setupBack").onclick = () => { setupStep = Math.max(1, setupStep - 1); renderSetup(); };
   $("setupSkip").onclick = () => finishSetup();
+  $("setupImport").onclick = () => { finishSetup(); show("import"); };
   $("setupNext").onclick = () => {
     if (setupStep === 1) {
       const custom = document.querySelector('input[name="jmode"]:checked').value === "custom";
@@ -1361,6 +1392,98 @@ ${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""
     if ($("clearWord").value.trim() !== "EFFACER") return;
     state.chapters.forEach(c => { if (c.pdf) pdfDelete(c.pdf); });
     resetClear(); state = { accent: state.accent, jList: state.jList, maxPerDay: state.maxPerDay, seenIntro: true, setupDone: true, ownerId: state.ownerId, cloudAt: state.cloudAt, example: false, dataVersion: 7, subjects: [], chapters: [] }; lastSmooth = null; save(); show("subjects"); };
+
+  // ---------- Importer (emploi du temps recopié par l'IA de l'étudiant) ----------
+  const IMP_PROMPT = `Voici une photo de mon emploi du temps (ou de la liste de mes matières). Recopie-la pour mon site de révision, au format suivant, une ligne par cours, sans rien écrire d'autre :
+
+UE ; Matière ; Titre du cours ; Date du cours (JJ/MM/AAAA)
+
+Règles :
+- Si l'UE n'est pas indiquée, laisse la case vide (la ligne commence alors par « ; »).
+- Si je n'ai que des matières (pas de cours précis), écris seulement : UE ; Matière
+- Si la date n'est pas visible, laisse la dernière case vide.
+- Un cours qui revient plusieurs fois = une seule ligne, à la date de la première séance.
+- Ignore les pauses, les repas et les examens.
+- N'invente rien : recopie seulement ce qui est écrit.
+
+Exemple :
+UE21 Appareil locomoteur ; Sémiologie ; Sémiologie de la marche ; 27/10/2026
+UE22 Agents infectieux ; Virologie ; VIH ; 02/11/2026
+; Anglais`;
+  $("impPrompt").value = IMP_PROMPT;
+  $("impCopy").onclick = async () => {
+    try { await navigator.clipboard.writeText(IMP_PROMPT); }
+    catch (e) { $("impPrompt").focus(); $("impPrompt").select(); try { document.execCommand("copy"); } catch (e2) {} }
+    $("impCopied").hidden = false; setTimeout(() => $("impCopied").hidden = true, 1500);
+  };
+  function parseDate(t) {
+    t = (t || "").trim(); if (!t) return { date: "" };
+    let m = t.match(/(\d{4})-(\d{1,2})-(\d{1,2})/), y, mo, d;
+    if (m) { y = +m[1]; mo = +m[2]; d = +m[3]; }
+    else if ((m = t.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/))) { d = +m[1]; mo = +m[2]; y = +m[3]; if (y < 100) y += 2000; }
+    else return { bad: true };
+    const dt = new Date(y, mo - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d || y < 2000 || y > 2100) return { bad: true };
+    return { date: iso(dt) };
+  }
+  let impPlan = null;
+  function parseImport(text) {
+    const items = [], errors = [];
+    text.split(/\r?\n/).forEach((raw, i) => {
+      let line = raw.trim().replace(/^[-*•]\s+/, "").replace(/^\|/, "").replace(/\|$/, "");
+      if (!line || /^```/.test(line) || /^#/.test(line) || /^[-|: ]+$/.test(line)) return;
+      const f = line.split(/\s*[;\t|]\s*/).map(x => x.trim().replace(/^["']|["']$/g, ""));
+      if (f.length < 2) { errors.push(`Ligne ${i + 1} pas comprise : « ${line.slice(0, 60)} »`); return; }
+      if (/^ue$/i.test(f[0]) && /^mati/i.test(f[1] || "")) return; // ligne de titres
+      const [ue, name, title = "", dateTxt = ""] = f;
+      if (!name) { errors.push(`Ligne ${i + 1} : il manque le nom de la matière.`); return; }
+      const pd = parseDate(dateTxt);
+      if (pd.bad) errors.push(`Ligne ${i + 1} : date « ${dateTxt} » pas comprise, le cours sera daté d'aujourd'hui.`);
+      items.push({ ue: ue.slice(0, 40), name: name.slice(0, 40), title: title.slice(0, 120), date: pd.date || "" });
+    });
+    return { items, errors };
+  }
+  const same = (a, b) => a.toLowerCase() === b.toLowerCase();
+  $("impCheck").onclick = () => {
+    const { items, errors } = parseImport($("impText").value);
+    if (!items.length) { $("impMsg").textContent = errors.length ? "Je n'ai rien compris dans ce texte. Vérifie que chaque ligne ressemble à l'exemple, avec des « ; »." : "Colle d'abord la réponse de ton IA dans la case."; $("impPreview").hidden = true; return; }
+    $("impMsg").textContent = "";
+    // regroupe par UE + matière, en repérant ce qui existe déjà
+    const groups = [];
+    items.forEach(it => {
+      let g = groups.find(x => same(x.ue, it.ue) && same(x.name, it.name));
+      if (!g) {
+        const ex = state.subjects.find(s => same(s.name, it.name) && same(s.ue || "", it.ue));
+        g = { ue: it.ue, name: it.name, existing: ex || null, chapters: [] }; groups.push(g);
+      }
+      if (it.title && !g.chapters.some(c => same(c.title, it.title))) {
+        const dup = g.existing && state.chapters.some(c => c.subjectId === g.existing.id && same(c.title, it.title));
+        g.chapters.push({ title: it.title, date: it.date || TODAY, dup });
+      }
+    });
+    const nSub = groups.filter(g => !g.existing).length, nCh = groups.reduce((n, g) => n + g.chapters.filter(c => !c.dup).length, 0);
+    impPlan = groups;
+    $("impSummary").textContent = `${nSub} matière${nSub > 1 ? "s" : ""} nouvelle${nSub > 1 ? "s" : ""} et ${nCh} cours à ajouter.`;
+    $("impList").innerHTML = groups.map(g => `<div><strong>${esc(g.name)}</strong>${g.ue ? ` <span class="muted">· ${esc(g.ue)}</span>` : ""}${g.existing ? ` <span class="pill">existe déjà</span>` : ""}
+      ${g.chapters.length ? `<ul style="margin:4px 0 0;padding-left:18px">${g.chapters.map(c => `<li>${esc(c.title)} <span class="muted">· ${shortDay(c.date)}</span>${c.dup ? ` <span class="pill">déjà là, ignoré</span>` : ""}</li>`).join("")}</ul>` : ""}</div>`).join("");
+    $("impErrors").hidden = !errors.length;
+    $("impErrors").innerHTML = errors.length ? `<strong>À vérifier :</strong><ul>${errors.slice(0, 12).map(e => `<li>${esc(e)}</li>`).join("")}</ul>` : "";
+    $("impOk").disabled = !nSub && !nCh;
+    $("impPreview").hidden = false; $("impPreview").scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  $("impCancel").onclick = () => { impPlan = null; $("impPreview").hidden = true; };
+  $("impOk").onclick = () => {
+    if (!impPlan) return;
+    let nCh = 0;
+    impPlan.forEach(g => {
+      let s = g.existing;
+      if (!s) { s = { id: uid(), ue: g.ue, name: g.name, color: SUB_COLORS[state.subjects.length % SUB_COLORS.length] }; state.subjects.push(s); }
+      g.chapters.filter(c => !c.dup).forEach(c => { state.chapters.push(newChapter(s.id, c.title, c.date, true)); nCh++; });
+    });
+    impPlan = null; state.setupDone = true; lastSmooth = null; save();
+    $("impPreview").hidden = true; $("impText").value = "";
+    show(nCh ? "today" : "subjects");
+  };
 
   // ---------- Mon compte : connexion et synchronisation ----------
   const pdfKey = ch => (ch && ch.pdf && (ch.pdf.id || ch.pdf.path)) || "";
