@@ -594,6 +594,10 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   const LOCAL_ONLY = ["ownerId", "cloudAt", "dirty"];
   let sb = null, sbUser = null, pushTimer = null, pendingCloud = null, recovering = false;
   try { if (window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) { sb = null; }
+  // ancienne version de test (tableau de médecine) restée dans le navigateur : on l'efface
+  const OLD_TEST = ["TALAGAS histologie-organes des sens", "Seizeur-SNP", "Nevez-Paludisme"];
+  const isOldTest = d => !!(d && Array.isArray(d.chapters) && d.chapters.some(c => OLD_TEST.includes(c && c.title)));
+  if (isOldTest(state)) state = { accent: state.accent || "Lavande", seenIntro: state.seenIntro, ownerId: state.ownerId, cloudAt: state.cloudAt, dirty: !!state.ownerId, example: false, dataVersion: 7, subjects: [], chapters: [] };
   function localSave() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   function save() {
     if (state.ownerId) { state.dirty = true; if (sbUser && state.ownerId === sbUser.id) schedulePush(); }
@@ -1403,6 +1407,7 @@ ${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""
     const d = row.data || {};
     state = { ...d, subjects: Array.isArray(d.subjects) ? d.subjects : [], chapters: Array.isArray(d.chapters) ? d.chapters : [],
       seenIntro: true, setupDone: true, ownerId: sbUser.id, cloudAt: row.updated_at, dirty: false };
+    if (isOldTest(state)) { state.subjects = []; state.chapters = []; state.dirty = true; schedulePush(); }
     localSave(); lastSmooth = null;
     if (!$("setup").hidden) { $("setup").hidden = true; $("app").hidden = false; }
     render();
