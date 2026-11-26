@@ -1572,6 +1572,7 @@ UE22 Agents infectieux ; Virologie ; VIH ; 02/11/2026
     $("accNewPass").hidden = !(sbUser && recovering);
     if (sbUser) $("accWho").textContent = sbUser.email || "";
     $("tab-account").textContent = sbUser ? "Mon compte ✓" : "Mon compte";
+    $("tab-intro").hidden = !!sbUser; // la présentation ne sert plus une fois connecté
     $("footNote").textContent = sbUser ? "Tes révisions sont enregistrées sur ton compte : tu les retrouves sur tous tes appareils." : sb ? "Tes révisions sont gardées dans ce navigateur, sur cet appareil. Crée un compte (menu ☰ › Mon compte) pour les retrouver partout." : "Tes révisions sont gardées dans ce navigateur, sur cet appareil.";
     if (current.view === "fiche") renderLink(curCh(), false);
   }
