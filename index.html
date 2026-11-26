@@ -535,7 +535,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       <h2 id="ficheTitle"></h2>
       <div class="row" id="ficheJs"></div>
       <div class="banner" id="ficheDue" hidden><span id="ficheDueText"></span><button class="btn primary small" id="ficheDone" type="button">✓ Fait</button></div>
-      <div class="alert good" id="ficheBravo" hidden></div>
+      <div class="alert good" id="ficheBravo" hidden><span id="ficheBravoText"></span><div class="row"><button class="btn small" id="ficheUndo" type="button">↩ Annuler, je ne l'ai pas faite</button></div></div>
       <div class="linkbox">
         <div class="row" id="pdfView" hidden>
           <button class="btn primary" id="pdfOpen" type="button">📄 Ouvrir mon cours</button>
@@ -869,7 +869,13 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       const a = document.createElement("a"); a.href = safeUrl(ch.link); a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = "📄 Cours";
       el.querySelector(".meta").appendChild(a);
     }
-    if (withDone) {
+    if (r.done) {
+      const actions = document.createElement("div"); actions.className = "actions";
+      const bUndo = document.createElement("button");
+      bUndo.className = "btn small ghost"; bUndo.textContent = "↩ Décocher";
+      bUndo.onclick = () => { undoDone(r); render(); };
+      actions.append(bUndo); el.appendChild(actions);
+    } else if (withDone) {
       const actions = document.createElement("div"); actions.className = "actions";
       const bImp = document.createElement("button");
       bImp.className = "btn small warn"; bImp.textContent = "Important"; bImp.setAttribute("aria-pressed", !!r.important);
@@ -929,6 +935,13 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     const tl = $("todayList"); tl.innerHTML = "";
     if (!due.length) tl.innerHTML = `<div class="card empty">Rien à réviser aujourd'hui. Profites-en, ou ajoute un nouveau chapitre dans « Mes matières ».</div>`;
     due.forEach(([ch, r]) => tl.appendChild(taskEl(ch, r, true)));
+    // faites aujourd'hui : on peut les décocher en cas d'erreur
+    const doneToday = [];
+    state.chapters.forEach(ch => ch.reviews.forEach(r => { if (r.done && r.doneOn === TODAY) doneToday.push([ch, r]); }));
+    if (doneToday.length) {
+      const t = document.createElement("div"); t.className = "small muted"; t.style.marginTop = "4px"; t.textContent = "Fait aujourd'hui"; tl.appendChild(t);
+      doneToday.forEach(([ch, r]) => tl.appendChild(taskEl(ch, r, false)));
+    }
     const nl = $("nextList"); nl.innerHTML = "";
     if (!next.length) nl.innerHTML = `<div class="muted small">Aucune révision prévue cette semaine.</div>`;
     next.forEach(([ch, r]) => nl.appendChild(taskEl(ch, r, false)));
@@ -1009,6 +1022,11 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     $("ficheSubject").textContent = [subOf(ch).ue, subOf(ch).name].filter(Boolean).join(" · ");
     $("ficheTitle").textContent = ch.title;
     $("ficheJs").innerHTML = jPills(ch);
+    $("ficheJs").querySelectorAll(".pill").forEach((el, i) => {
+      const r = ch.reviews[i]; if (!r || !r.done) return;
+      el.style.cursor = "pointer"; el.title = "Clique pour décocher cette révision"; el.setAttribute("role", "button"); el.tabIndex = 0;
+      el.onclick = el.onkeydown = e => { if (e.type === "keydown" && e.key !== "Enter") return; undoDone(r); lastDone = null; $("ficheBravo").hidden = true; render(); };
+    });
     renderDue(ch);
     $("ficheText").value = ch.fiche || "";
     $("confirmDelete").hidden = true;
@@ -1025,16 +1043,26 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     if (r) $("ficheDueText").textContent = r.date < TODAY ? `Révision J${r.j} en retard de ${daysBetween(r.date, TODAY)} j` : `Révision J${r.j} à faire aujourd'hui`;
     $("viewerDone").hidden = !r;
   }
+  let lastDone = null;
+  function undoDone(r) { r.done = false; delete r.doneOn; save(); }
   function markDueDone(ch) {
     const r = dueReview(ch); if (!r) return;
-    r.done = true; r.doneOn = TODAY; r.important = false; save();
+    r.done = true; r.doneOn = TODAY; r.important = false; save(); lastDone = { ch, r };
     const next = ch.reviews.filter(x => !x.done).sort((a, b) => a.date < b.date ? -1 : 1)[0];
-    $("ficheBravo").textContent = `Bravo, J${r.j} faite ✓` + (next ? (next.date <= TODAY ? ` Il te reste J${next.j}.` : ` Prochaine révision : J${next.j}, ${pretty(next.date)}.`) : " Tu as fini toutes les révisions de ce chapitre 🎉");
+    $("ficheBravoText").textContent = `Bravo, J${r.j} faite ✓` + (next ? (next.date <= TODAY ? ` Il te reste J${next.j}.` : ` Prochaine révision : J${next.j}, ${pretty(next.date)}.`) : " Tu as fini toutes les révisions de ce chapitre 🎉");
     $("ficheBravo").hidden = false; clearTimeout($("ficheBravo")._t); $("ficheBravo")._t = setTimeout(() => $("ficheBravo").hidden = true, 6000);
     render(); renderDue(ch);
   }
   $("ficheDone").onclick = () => markDueDone(curCh());
-  $("viewerDone").onclick = () => { markDueDone(viewerCh); $("viewerDone").textContent = "Fait ✓"; setTimeout(() => { $("viewerDone").textContent = "✓ Fait"; renderDue(viewerCh); }, 1500); $("viewerDone").hidden = false; };
+  $("ficheUndo").onclick = () => { if (!lastDone) return; undoDone(lastDone.r); const ch = lastDone.ch; lastDone = null; $("ficheBravo").hidden = true; render(); renderDue(ch); };
+  // dans le PDF : après « Fait », le bouton devient « Annuler » quelques secondes
+  $("viewerDone").onclick = () => {
+    const b = $("viewerDone");
+    if (b.dataset.undo && lastDone) { undoDone(lastDone.r); lastDone = null; delete b.dataset.undo; clearTimeout(b._t); b.textContent = "✓ Fait"; render(); renderDue(viewerCh); return; }
+    markDueDone(viewerCh);
+    b.hidden = false; b.dataset.undo = "1"; b.textContent = "↩ Annuler";
+    clearTimeout(b._t); b._t = setTimeout(() => { delete b.dataset.undo; b.textContent = "✓ Fait"; renderDue(viewerCh); }, 6000);
+  };
 
   // ---------- Lien vers le cours (Drive, OneDrive, GoodNotes, Moodle…) ----------
   const safeUrl = u => /^https?:\/\//i.test(u || "") ? u : "";
