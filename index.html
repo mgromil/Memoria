@@ -102,6 +102,12 @@ button.btn.warn[aria-pressed="true"] { background: var(--late-soft); color: var(
 .cal-day .ok { font-size: 0.72rem; color: var(--ok); font-weight: 600; }
 .dots { display: flex; gap: 2px; flex-wrap: wrap; }
 .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); display: block; }
+.pw { position: relative; }
+.pw input { padding-right: 44px; }
+.pw .eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border: 0; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; border-radius: 8px; }
+.pw .eye:hover { color: var(--fg); }
+.pw .eye .slash { display: none; }
+.pw .eye[aria-pressed="true"] .slash { display: inline; }
 .legend { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.8rem; }
 .legend .lg { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 8px; border-radius: 999px; background: var(--bg); color: var(--fg); }
 .legend .lg i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
@@ -476,7 +482,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
         <label for="accEmail" class="small muted">Adresse mail</label>
         <input type="email" id="accEmail" autocomplete="email" required>
         <label for="accPass" class="small muted">Mot de passe (6 caractères minimum)</label>
-        <input type="password" id="accPass" autocomplete="current-password" minlength="6" required>
+        <div class="pw"><input type="password" id="accPass" autocomplete="current-password" minlength="6" required><button type="button" class="eye" aria-label="Afficher le mot de passe" data-for="accPass"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path class="slash" d="M4 4l16 16"/></svg></button></div>
         <div class="row"><button class="btn primary" id="accLogin" type="submit">Se connecter</button><button class="btn" id="accSignup" type="button">Créer mon compte</button></div>
         <div class="row"><button class="btn ghost small" id="accForgot" type="button">Mot de passe oublié ?</button><button class="btn ghost small" id="accIntro" type="button" hidden>Voir la présentation</button></div>
       </form>
@@ -485,7 +491,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     <div class="card" id="accNewPass" hidden>
       <h2>Choisis un nouveau mot de passe</h2>
       <form class="row" id="accNewPassForm">
-        <input type="password" id="accNewPassInput" minlength="6" autocomplete="new-password" required aria-label="Nouveau mot de passe" style="flex:1 1 180px;width:auto">
+        <div class="pw" style="flex:1 1 180px"><input type="password" id="accNewPassInput" minlength="6" autocomplete="new-password" required aria-label="Nouveau mot de passe"><button type="button" class="eye" aria-label="Afficher le mot de passe" data-for="accNewPassInput"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path class="slash" d="M4 4l16 16"/></svg></button></div>
         <button class="btn primary" type="submit">Enregistrer</button>
       </form>
       <span class="small" id="accNewPassMsg" role="status"></span>
@@ -1709,6 +1715,12 @@ UE2 ; Histoire ; La Révolution française ; 18/09/2026
     email_address_invalid: "Cette adresse mail n'est pas valide."
   };
   const authMsg = err => AUTH_ERRORS[err && err.code] || (/fetch|network/i.test(err && err.message || "") ? "Pas de connexion internet. Réessaie quand tu as du réseau." : "Ça n'a pas marché. Réessaie dans un instant.");
+  // le petit œil : afficher / cacher le mot de passe
+  document.querySelectorAll(".pw .eye").forEach(b => b.onclick = () => {
+    const inp = $(b.dataset.for), show = inp.type === "password";
+    inp.type = show ? "text" : "password";
+    b.setAttribute("aria-pressed", show); b.setAttribute("aria-label", show ? "Cacher le mot de passe" : "Afficher le mot de passe");
+  });
   function busy(on) { ["accLogin", "accSignup", "accForgot"].forEach(id => $(id).disabled = on); }
   $("accForm").onsubmit = async e => {
     e.preventDefault(); if (!sb) return;
