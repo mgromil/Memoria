@@ -534,6 +534,8 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       <div class="muted small" id="ficheSubject"></div>
       <h2 id="ficheTitle"></h2>
       <div class="row" id="ficheJs"></div>
+      <div class="banner" id="ficheDue" hidden><span id="ficheDueText"></span><button class="btn primary small" id="ficheDone" type="button">✓ Fait</button></div>
+      <div class="alert good" id="ficheBravo" hidden></div>
       <div class="linkbox">
         <div class="row" id="pdfView" hidden>
           <button class="btn primary" id="pdfOpen" type="button">📄 Ouvrir mon cours</button>
@@ -608,6 +610,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     <button class="btn small" id="viewerClose">← Fermer</button>
     <span class="viewer-title" id="viewerTitle"></span>
     <span class="row" style="gap:6px">
+      <button class="btn primary small" id="viewerDone" hidden>✓ Fait</button>
       <button class="btn small" id="zoomOut" aria-label="Dézoomer">−</button>
       <button class="btn small" id="zoomIn" aria-label="Zoomer">+</button>
     </span>
@@ -796,7 +799,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
   const nextReview = ch => ch.reviews.find(r => !r.done);
   const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  function openFiche(chId, from) { current.chapterId = chId; current.from = from; quiz = null; show("fiche"); }
+  function openFiche(chId, from) { current.chapterId = chId; current.from = from; quiz = null; $("ficheBravo").hidden = true; show("fiche"); }
 
   // ---------- Rendu ----------
   // Décaler une révision ratée. SHIFT_ALL = true : les J suivants reculent du même nombre de jours.
@@ -1006,12 +1009,32 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     $("ficheSubject").textContent = [subOf(ch).ue, subOf(ch).name].filter(Boolean).join(" · ");
     $("ficheTitle").textContent = ch.title;
     $("ficheJs").innerHTML = jPills(ch);
+    renderDue(ch);
     $("ficheText").value = ch.fiche || "";
     $("confirmDelete").hidden = true;
     $("pdfMsg").textContent = "";
     renderLink(ch, false);
     if (!quiz) renderCards(ch);
   }
+
+  // ---------- « Fait » directement depuis le cours ----------
+  const dueReview = ch => ch && ch.reviews.filter(r => !r.done && r.date <= TODAY).sort((a, b) => a.date < b.date ? -1 : 1)[0];
+  function renderDue(ch) {
+    const r = dueReview(ch);
+    $("ficheDue").hidden = !r;
+    if (r) $("ficheDueText").textContent = r.date < TODAY ? `Révision J${r.j} en retard de ${daysBetween(r.date, TODAY)} j` : `Révision J${r.j} à faire aujourd'hui`;
+    $("viewerDone").hidden = !r;
+  }
+  function markDueDone(ch) {
+    const r = dueReview(ch); if (!r) return;
+    r.done = true; r.doneOn = TODAY; r.important = false; save();
+    const next = ch.reviews.filter(x => !x.done).sort((a, b) => a.date < b.date ? -1 : 1)[0];
+    $("ficheBravo").textContent = `Bravo, J${r.j} faite ✓` + (next ? (next.date <= TODAY ? ` Il te reste J${next.j}.` : ` Prochaine révision : J${next.j}, ${pretty(next.date)}.`) : " Tu as fini toutes les révisions de ce chapitre 🎉");
+    $("ficheBravo").hidden = false; clearTimeout($("ficheBravo")._t); $("ficheBravo")._t = setTimeout(() => $("ficheBravo").hidden = true, 6000);
+    render(); renderDue(ch);
+  }
+  $("ficheDone").onclick = () => markDueDone(curCh());
+  $("viewerDone").onclick = () => { markDueDone(viewerCh); $("viewerDone").textContent = "Fait ✓"; setTimeout(() => { $("viewerDone").textContent = "✓ Fait"; renderDue(viewerCh); }, 1500); $("viewerDone").hidden = false; };
 
   // ---------- Lien vers le cours (Drive, OneDrive, GoodNotes, Moodle…) ----------
   const safeUrl = u => /^https?:\/\//i.test(u || "") ? u : "";
@@ -1249,8 +1272,10 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       box.appendChild(c); viewerObs.observe(c);
     }
   }
+  let viewerCh = null;
   async function openViewer(ch) {
     if (!ch || !ch.pdf) return;
+    viewerCh = ch; renderDue(ch);
     $("viewer").hidden = false; document.body.style.overflow = "hidden";
     $("viewerTitle").textContent = ch.pdf.name || ch.title;
     $("viewerPages").innerHTML = `<div class="vmsg">Ouverture du cours…</div>`;
