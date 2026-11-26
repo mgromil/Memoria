@@ -345,7 +345,8 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     <div class="card">
       <h2>Mes matières</h2>
       <form class="row" id="addSubjectForm">
-        <input type="text" id="newUe" list="ueList" placeholder="UE (facultatif, ex. UE21)" maxlength="40">
+        <select id="newUeSel" aria-label="UE de la matière"></select>
+        <input type="text" id="newUe" placeholder="Nom de la nouvelle UE (ex. UE21)" maxlength="40" hidden>
         <input type="text" id="newSubject" placeholder="Matière (ex. Physiologie)" maxlength="40" required>
         <datalist id="ueList"></datalist>
         <button class="btn primary" type="submit">Ajouter</button>
@@ -363,9 +364,10 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
       <h2 id="subjectTitle"></h2>
       <div class="row small"><span class="muted">Couleur de la matière :</span><div class="colors" id="subjectColorPick" aria-label="Couleur de la matière"></div></div>
       <form class="row" id="editUeForm">
-        <label for="editUe" class="small muted">UE de cette matière :</label>
-        <input type="text" id="editUe" list="ueList" placeholder="Aucune" maxlength="40">
-        <button class="btn small" type="submit">Changer</button>
+        <label for="editUeSel" class="small muted">UE de cette matière :</label>
+        <select id="editUeSel"></select>
+        <input type="text" id="editUe" placeholder="Nom de la nouvelle UE" maxlength="40" hidden>
+        <button class="btn small" type="submit" id="editUeBtn" hidden>Créer</button>
         <span class="saved" id="ueSaved" hidden></span>
       </form>
       <form class="row" id="addChapterForm">
@@ -898,7 +900,18 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     next.forEach(([ch, r]) => nl.appendChild(taskEl(ch, r, false)));
   }
 
+  // menus déroulants des UE : les UE existantes + « Sans UE » + « Nouvelle UE… »
+  function allUes() { return [...new Set(state.subjects.map(s => s.ue || "").filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr", { numeric: true })); }
+  function fillUeSelect(sel, value) {
+    const ues = allUes();
+    if (value && value !== "__new" && !ues.includes(value)) value = "";
+    sel.innerHTML = `<option value="">Sans UE</option>` + ues.map(u => `<option value="${esc(u)}">${esc(u)}</option>`).join("") + `<option value="__new">➕ Nouvelle UE…</option>`;
+    sel.value = value || "";
+  }
+  const ueValue = (sel, input) => sel.value === "__new" ? input.value.trim() : sel.value;
   function renderSubjects() {
+    if (document.activeElement !== $("newUeSel")) fillUeSelect($("newUeSel"), $("newUeSel").value);
+    $("newUe").hidden = $("newUeSel").value !== "__new";
     const g = $("subjectGrid"); g.innerHTML = "";
     if (!state.subjects.length) g.innerHTML = `<div class="card empty" style="grid-column:1/-1">Ajoute ta première matière ci-dessus.</div>`;
     // rangement par UE (une même matière peut être dans plusieurs UE), « Sans UE » à la fin
@@ -935,7 +948,7 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
     $("subjectTitle").textContent = s.name;
     $("subjectUe").textContent = s.ue ? s.ue : "Sans UE";
     $("subjectColorPick").querySelectorAll(".swatch").forEach(b => b.setAttribute("aria-pressed", b.dataset.color === s.color));
-    if (document.activeElement !== $("editUe")) $("editUe").value = s.ue || "";
+    if (document.activeElement !== $("editUe") && document.activeElement !== $("editUeSel")) { fillUeSelect($("editUeSel"), s.ue || ""); $("editUe").value = ""; $("editUe").hidden = $("editUeBtn").hidden = true; }
     if (document.activeElement !== $("newChapter")) $("chapterAlert").hidden = true;
     $("newChapterDate").max = TODAY; if (!$("newChapterDate").value) $("newChapterDate").value = TODAY;
     const list = $("chapterList"); list.innerHTML = "";
@@ -1338,18 +1351,30 @@ ${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""
   $("addSubjectForm").onsubmit = e => {
     e.preventDefault();
     const name = $("newSubject").value.trim(); if (!name) return;
-    const ue = $("newUe").value.trim();
+    const ue = ueValue($("newUeSel"), $("newUe"));
+    if ($("newUeSel").value === "__new" && !ue) { $("newUe").focus(); return; }
     if (state.subjects.some(s => s.name.toLowerCase() === name.toLowerCase() && (s.ue || "") === ue)) { $("newSubject").setCustomValidity(ue ? "Cette matière existe déjà dans cette UE" : "Cette matière existe déjà"); $("newSubject").reportValidity(); return; }
     state.subjects.push({ id: uid(), ue, name, color: SUB_COLORS[state.subjects.length % SUB_COLORS.length] });
-    $("newSubject").value = ""; save(); render();
+    $("newSubject").value = ""; $("newUe").value = ""; fillUeSelect($("newUeSel"), ue); save(); render();
+  };
+  $("newUeSel").onchange = () => { $("newUe").hidden = $("newUeSel").value !== "__new"; if (!$("newUe").hidden) $("newUe").focus(); $("newSubject").setCustomValidity(""); };
+  function setSubjectUe(ue) {
+    const s = state.subjects.find(x => x.id === current.subjectId); if (!s) return;
+    const before = s.ue || "";
+    s.ue = ue; $("editUeSel").blur(); $("editUe").blur(); save(); render();
+    $("ueSaved").textContent = ue === before ? "C'est déjà son UE." : ue ? "UE changée ✓" : "Matière retirée de son UE ✓";
+    $("ueSaved").hidden = false; clearTimeout($("ueSaved")._t); $("ueSaved")._t = setTimeout(() => $("ueSaved").hidden = true, 3500);
+  }
+  $("editUeSel").onchange = () => {
+    const isNew = $("editUeSel").value === "__new";
+    $("editUe").hidden = $("editUeBtn").hidden = !isNew;
+    if (isNew) $("editUe").focus(); else setSubjectUe($("editUeSel").value);
   };
   $("editUeForm").onsubmit = e => {
     e.preventDefault();
-    const s = state.subjects.find(x => x.id === current.subjectId); if (!s) return;
-    const ue = $("editUe").value.trim(), before = s.ue || "";
-    s.ue = ue; $("editUe").blur(); save(); render();
-    $("ueSaved").textContent = ue === before ? "C'est déjà son UE. Écris une autre UE dans la case, puis clique sur Changer." : ue ? "UE changée ✓" : "Matière retirée de son UE ✓";
-    $("ueSaved").hidden = false; clearTimeout($("ueSaved")._t); $("ueSaved")._t = setTimeout(() => $("ueSaved").hidden = true, 3500);
+    const ue = $("editUe").value.trim();
+    if (!ue) { $("editUe").focus(); return; }
+    setSubjectUe(ue);
   };
   $("newSubject").oninput = $("newUe").oninput = () => $("newSubject").setCustomValidity("");
   $("addChapterForm").onsubmit = e => {
