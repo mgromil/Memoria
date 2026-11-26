@@ -94,7 +94,7 @@ button.btn.warn[aria-pressed="true"] { background: var(--late-soft); color: var(
 .cal-day { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; min-height: 58px; padding: 5px; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; cursor: pointer; font: inherit; color: inherit; text-align: left; min-width: 0; }
 .cal-day.out { opacity: 0.4; }
 .cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
-.cal-day.heavy { background: var(--late-soft); border-color: var(--late); }
+.cal-day.heavy { border-color: var(--late) !important; box-shadow: inset 0 0 0 1px var(--late); }
 .cal-day[aria-pressed="true"] { border-color: var(--fg); }
 .cal-day .num { font-size: 0.8rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .cal-day .n { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -102,7 +102,16 @@ button.btn.warn[aria-pressed="true"] { background: var(--late-soft); color: var(
 .cal-day .ok { font-size: 0.72rem; color: var(--ok); font-weight: 600; }
 .dots { display: flex; gap: 2px; flex-wrap: wrap; }
 .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); display: block; }
-.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.8rem; }
+.legend .lg { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 8px; border-radius: 999px; background: var(--bg); color: var(--fg); }
+.legend .lg i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+.st-todo { --st: var(--accent-soft); --st-ink: var(--accent-ink); }
+.st-mid { --st: #fdf0d8; --st-ink: #a86a12; }
+.st-done { --st: var(--ok-soft); --st-ink: var(--ok); }
+.legend .lg i { background: var(--st); box-shadow: inset 0 0 0 1px var(--st-ink); }
+.cal-day.st-todo, .cal-day.st-mid, .cal-day.st-done { background: var(--st); border-color: transparent; }
+.cal-day.st-todo .n, .cal-day.st-mid .n, .cal-day.st-done .n { color: var(--st-ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .st-mid { --st: #3a3020; --st-ink: #f0c27a; } }
 .task.done { opacity: 0.7; }
 .fcard { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: start; }
 .fcard .q { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
@@ -394,7 +403,12 @@ textarea { min-height: 260px; resize: vertical; line-height: 1.6; }
         <button class="btn small" id="calNext" aria-label="Mois suivant">›</button>
       </div>
       <div class="cal-grid" id="calGrid"></div>
-      <div class="legend"><span>Chiffre = révisions à faire</span><span style="color:var(--ok)">✓ = faites</span><span style="color:var(--late)">Rouge = au-dessus de ton max</span></div>
+      <div class="legend">
+        <span class="lg st-todo"><i></i>À faire</span>
+        <span class="lg st-mid"><i></i>En cours</span>
+        <span class="lg st-done"><i></i>Fini !</span>
+      </div>
+      <p class="small muted" style="margin:0">Le chiffre = révisions qui restent ce jour-là. Un contour rouge = journée trop chargée.</p>
     </div>
     <h3 id="calDayTitle"></h3>
     <div class="list" id="calDayList"></div>
@@ -1313,13 +1327,15 @@ ${hlText ? `\nPassages surlignés par l'étudiant :\n"""\n${hlText}\n"""\n` : ""
       if (i === 35 && d.slice(0, 7) !== calMonth) break;
       const info = dayInfo(d);
       const n = info.todo.length + (d < TODAY ? info.missed.length : 0);
+      const total = n + info.done.length;
+      const st = !total ? "" : !n ? " st-done" : info.done.length ? " st-mid" : " st-todo";
       const b = document.createElement("button");
-      b.className = "cal-day" + (d.slice(0, 7) !== calMonth ? " out" : "") + (d === TODAY ? " today" : "") + (state.maxPerDay && d >= TODAY && info.todo.length > state.maxPerDay ? " heavy" : "");
+      b.className = "cal-day" + (d.slice(0, 7) !== calMonth ? " out" : "") + (d === TODAY ? " today" : "") + st + (state.maxPerDay && d >= TODAY && info.todo.length > state.maxPerDay ? " heavy" : "");
       b.setAttribute("aria-pressed", d === calSel);
       b.setAttribute("aria-label", pretty(d));
       const subs = [...new Set(info.todo.concat(info.missed).map(([ch]) => subOf(ch).color))].slice(0, 5);
       b.innerHTML = `<span class="num">${Number(d.slice(8))}</span>
-        <span>${n ? `<span class="n">${n}</span>` : ""}${info.done.length ? ` <span class="ok">✓${info.done.length}</span>` : ""}</span>
+        <span>${n ? `<span class="n">${n}</span>` : total ? `<span class="n">✓</span>` : ""}</span>
         <span class="dots">${subs.map(c => `<i style="--c:${c}"></i>`).join("")}</span>`;
       b.onclick = () => { calSel = d; renderCalendar(); };
       g.appendChild(b);
