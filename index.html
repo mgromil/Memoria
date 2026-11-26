@@ -1827,6 +1827,20 @@ UE2 ; Histoire ; La Révolution française ; 18/09/2026
     window.addEventListener("pagehide", () => { if (state.dirty) pushNow(); });
   }
 
+  // mise à jour automatique : si le site a changé depuis que ce navigateur l'a gardé en mémoire, on recharge la nouvelle version
+  const BUILD = "b-20261126-2358";
+  (async () => {
+    try {
+      const r = await fetch(location.pathname + "?maj=" + Date.now(), { cache: "no-store" });
+      const t = r.ok ? await r.text() : "";
+      const m = t.match(/const BUILD = "([^"]+)"/);
+      if (m && m[1] !== BUILD && sessionStorage.getItem("memoria-maj") !== m[1]) {
+        sessionStorage.setItem("memoria-maj", m[1]);
+        if (state.dirty) await pushNow();
+        location.replace(location.pathname + "?v=" + encodeURIComponent(m[1]));
+      }
+    } catch (e) {}
+  })();
   startAuth();
   if (!sb) { $("loading").hidden = true; if (!state.seenIntro) showIntro(true); else route(); }
   else { $("app").hidden = true; startAuthListeners(); }
